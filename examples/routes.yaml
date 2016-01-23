@@ -1,0 +1,67 @@
+swagger: '2.0'
+info:
+  title: Sample App API
+  description: Sample API built with Swagger
+  version: 1.0.0
+paths:
+  /test:
+    get:
+      x-action: "r.expr([1,2,3])"
+  /test/:n:
+    get:
+      parameters:
+        - in: "path"
+          name: "n"
+          type: "string"
+      x-action: "r.expr(params.n)"
+  /fellowship:
+    get:
+      x-action: "r.db('test').table('fellowship')"
+    post:
+      parameters:
+        - in: "body"
+          name: "member"
+          required: true
+          type: "object"
+      x-action: "r.db('test').table('fellowship').insert(params.member)"
+  /fellowship/:species:
+    get:
+      parameters:
+        - in: "path"
+          name: "species"
+          required: true
+          type: "string"
+      x-action: "r.db('test').table('fellowship').filter({species: params.species})"
+  /messages:
+    get:
+      parameters:
+      - name: limit
+        in: query
+        type: number
+        default: 10
+      x-action: >
+        r.db('chat').table('messages').orderBy(r.desc('time'))
+         .limit(params.limit)
+    post:
+      parameters:
+      - name: user
+        in: body
+        type: string
+        required: true
+      - name: text
+        in: body
+        type: string
+        required: true
+      x-action: >
+        r.db('chat').table('messages')
+         .insert({user: params.user, text: params.text, time: r.now()})
+  /messages/:limit:
+    get:
+      summary: Retrieve existing message history
+      parameters:
+      - name: limit
+        in: path
+        type: number
+      x-action: >
+        r.db('chat').table('messages')
+         .orderBy(r.desc('time')).limit(params.limit)

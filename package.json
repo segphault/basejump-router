@@ -1,0 +1,16 @@
+{
+  "name": "swagger-router",
+  "version": "0.0.1",
+  "description": "Dynamic routing middleware based on the Swagger specification",
+  "author": "Ryan Paul <ryan@rethinkdb.com>",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/segphault/swagger-router.git"
+  },
+  "dependencies": {
+    "bluebird": "^3.1.1",
+    "route-parser": "0.0.4",
+    "yamljs": "^0.2.4"
+  }
+}
