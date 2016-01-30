@@ -15,7 +15,7 @@ class RequestHandler extends RouteManager {
       else this.setRoutes(opts.routes);
 
     this.actionField = opts.actionField || "x-action";
-    if (opts.callback) this.execute = opts.callback;
+    this.callback = opts.callback || this.execute;
     if (opts.context) this.context = opts.context;
   }
 
@@ -36,12 +36,14 @@ class RequestHandler extends RouteManager {
       let value = input[param.in][param.name] || param.default;
 
       if (!value && param.required)
-        throw `Missing parameter '${param.name}'`;
+        throw {name: "ParamMissing", expose: true, error: 400,
+               message: `Missing parameter '${param.name}'`};
 
-      if (param.in === "body" && !this.checkParamType(param, value))
-        throw `Parameter '${param.name}' should have type ${param.type}`;
+      if (param.in === "body" && !this.checkParamType(param.type, value))
+        throw {name: "ParamWrongType", expose: true, error: 400,
+               message: `Parameter '${param.name}' should be ${param.type}`};
 
-      output[param.name] = this.convertParam(param, value);
+      output[param.name] = this.convertParam(param.type, value);
     }
 
     return output;
@@ -65,7 +67,7 @@ class RequestHandler extends RouteManager {
     req.params.path = match.params;
 
     let params = this.processParams(match.route.parameters, req.params);
-    let output = this.execute(match.route, params);
+    let output = this.callback(match.route, params);
 
     return bluebird.resolve(output);
   }
