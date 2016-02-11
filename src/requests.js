@@ -11,7 +11,7 @@ class RequestHandler {
   constructor(opts) {
     opts = opts || {};
 
-    this.schemas = ajv();
+    this.schemas = ajv({removeAdditional: true});
     this.routes = new RouteManager();
 
     if (opts.routes)
@@ -35,38 +35,35 @@ class RequestHandler {
     return t === "number" ? Number(value) : value;
   }
 
-  checkParamType(t, value) {
-    return t === "array" ? value instanceof Array : typeof(value) === t;
+  processBody(param, input) {
+    let schema = param.schema["$ref"] || param.schema;
+    let check = this.schemas.validate(schema, input.body);
+
+    if (!check)
+      throw {name: "ParamInvalid", expose: true, error: 400,
+             message: `Invalid parameter: ${this.schemas.errorsText()}`};
+
+    return input.body;
+  }
+
+  processParam(param, input) {
+    let value = input[param.in][param.name] || param.default;
+
+    if (!value && param.required)
+      throw {name: "ParamMissing", expose: true, error: 400,
+             message: `Missing parameter '${param.name}'`};
+
+    return this.convertParam(param.type, value);
   }
 
   processParams(params, input) {
     if (!params) return {};
-
     let output = {};
 
-    for (let param of params) {
-      let value = input[param.in][param.name] || param.default;
-
-      if (!value && param.required)
-        throw {name: "ParamMissing", expose: true, error: 400,
-               message: `Missing parameter '${param.name}'`};
-
-      if (param.in === "body" && !this.checkParamType(param.type, value))
-        throw {name: "ParamWrongType", expose: true, error: 400,
-               message: `Parameter '${param.name}' should be ${param.type}`};
-
-      if (param.schema) {
-        let schema = param.schema["$ref"] || param.schema;
-        let check = this.schemas.validate(schema, value);
-
-        if (!check)
-          throw {name: "ParamInvalid", expose: true, error: 400,
-                 message: `Invalid parameter: ${this.schemas.errorsText()}`};
-      }
-
-      output[param.name] = this.convertParam(param.type, value);
-    }
-
+    for (let param of params)
+      output[param.name] = param.in === "body" ?
+                           this.processBody(param, input) :
+                           this.processParam(param, input);
     return output;
   }
 

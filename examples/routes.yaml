@@ -11,7 +11,6 @@ paths:
       parameters:
         - in: body
           name: test
-          type: object
           schema:
             $ref: "#/definitions/Test"
       x-action: r.expr([1,2,3]).map(r.row.mul(2))
@@ -25,7 +24,15 @@ paths:
       x-action: r.db('test').table('fellowship')
     post:
       parameters:
-        - {in: body, name: member, required: true, type: object}
+        - in: body
+          name: member
+          schema:
+            type: object
+            properties:
+              name: {type: string}
+              species: {type: string}
+            required: ["name", "species"]
+            additionalProperties: false
       x-action: r.db('test').table('fellowship').insert(params.member)
   /fellowship/:species:
     get:
@@ -42,8 +49,14 @@ paths:
          .limit(params.limit)
     post:
       parameters:
-      - {name: user, in: body, type: string, required: true}
-      - {name: text, in: body, type: string, required: true}
+        - name: body
+          in: body
+          schema:
+            type: object
+            properties:
+              user: {type: string}
+              text: {type: string}
+            required: ["user", "text"]
       x-action: >
         r.db('chat').table('messages')
          .insert({user: params.user, text: params.text, time: r.now()})
