@@ -11,8 +11,8 @@ class MyHandler extends router.RequestHandler {
     r.db("basejump").table("routes")
     .changes({includeInitial: true})
     .then(cursor => cursor.each((err, change) => {
-      if (change.old_val) this.deleteRoute(change.old_val);
-      if (change.new_val) this.setRoute(change.new_val);
+      if (change.old_val) this.routes.deleteRoute(change.old_val);
+      if (change.new_val) this.routes.setRoute(change.new_val);
     }));
   }
 }

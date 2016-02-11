@@ -7,19 +7,19 @@ var bluebird = require("bluebird");
 var RouteManager = require("./routes");
 var serialization = require("./serialization");
 
-class RequestHandler extends RouteManager {
+class RequestHandler {
   constructor(opts) {
     opts = opts || {};
-    super();
 
     this.schemas = ajv();
+    this.routes = new RouteManager();
 
     if (opts.routes)
-      this.setRoutes(opts.routes);
+      this.routes.setRoute(opts.routes);
 
     if (opts.swagger)
       serialization.load(opts.swagger).then(schema => {
-        this.setRoutes(schema.paths);
+        this.routes.setRoute(schema.paths);
         this.schemas.addSchema(schema.definitions);
       })
       .catch(err => {
@@ -82,7 +82,7 @@ class RequestHandler extends RouteManager {
   }
 
   handle(req) {
-    let match = this.findMatch(req.method, req.path);
+    let match = this.routes.findMatch(req.method, req.path);
     if (!match) return null;
 
     req.params.path = match.params;
