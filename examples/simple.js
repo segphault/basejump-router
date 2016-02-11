@@ -2,12 +2,12 @@
 
 const app = require("koa")();
 const router = require("..");
-const r = require("rethinkdbdash")();
+const r = require("rethinkdbdash")({host: "rethinkdb-stable"});
 
 app.use(require("kcors")());
 app.use(require("koa-bodyparser")());
 app.use(router.middleware({
-  routes: "routes.yaml",
+  swagger: "routes.yaml",
   context: {r: r}
 }));
 

@@ -1,18 +1,30 @@
 'use strict';
 
 var vm = require("vm");
+var ajv = require("ajv");
 var bluebird = require("bluebird");
+
 var RouteManager = require("./routes");
+var serialization = require("./serialization");
 
 class RequestHandler extends RouteManager {
   constructor(opts) {
     opts = opts || {};
     super();
 
+    this.schemas = ajv();
+
     if (opts.routes)
-      if (typeof(opts.routes) === "string")
-        this.loadRoutes(opts.routes)
-      else this.setRoutes(opts.routes);
+      this.setRoutes(opts.routes);
+
+    if (opts.swagger)
+      serialization.load(opts.swagger).then(schema => {
+        this.setRoutes(schema.paths);
+        this.schemas.addSchema(schema.definitions);
+      })
+      .catch(err => {
+        console.log("Failed to parse Swagger schema:", err);
+      });
 
     this.actionField = opts.actionField || "x-action";
     this.callback = opts.callback || this.execute;
@@ -42,6 +54,15 @@ class RequestHandler extends RouteManager {
       if (param.in === "body" && !this.checkParamType(param.type, value))
         throw {name: "ParamWrongType", expose: true, error: 400,
                message: `Parameter '${param.name}' should be ${param.type}`};
+
+      if (param.schema) {
+        let schema = param.schema["$ref"] || param.schema;
+        let check = this.schemas.validate(schema, value);
+
+        if (!check)
+          throw {name: "ParamInvalid", expose: true, error: 400,
+                 message: `Invalid parameter: ${this.schemas.errorsText()}`};
+      }
 
       output[param.name] = this.convertParam(param.type, value);
     }

@@ -9,8 +9,9 @@
     "url": "https://github.com/segphault/swagger-router.git"
   },
   "dependencies": {
+    "ajv": "^3.5.3",
     "bluebird": "^3.1.1",
-    "route-parser": "0.0.4",
-    "yamljs": "^0.2.4"
+    "json-schema-ref-parser": "^2.2.0",
+    "route-parser": "0.0.4"
   }
 }

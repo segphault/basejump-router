@@ -1,22 +1,31 @@
 'use strict';
 
-var yaml = require("yamljs");
-var fs = require("fs");
+var refParse = require("json-schema-ref-parser");
 
 module.exports = {
-  load(fn, filetype) {
-    let format = filetype ||
-        fn.endsWith(".yaml") ? "yaml" :
-        fn.endsWith(".json") ? "json" : null;
-
-    let parser = {"yaml": yaml, "json": JSON}[format].parse;
-    let data = parser(fs.readFileSync(fn, "utf8")).paths;
-
+  normalizePaths(paths) {
     let routes = [];
-    for (var path of Object.keys(data))
-      for (var method of Object.keys(data[path]))
-        routes.push({path: path, method: method, settings: data[path][method]});
-
+    for (var path of Object.keys(paths))
+      for (var method of Object.keys(paths[path]))
+        routes.push({path: path, method: method, settings: paths[path][method]});
     return routes;
+  },
+
+  normalizeDefs(defs) {
+    let schemas = [];
+    for (var def of Object.keys(defs))
+      schemas.push(Object.assign({}, {id: `#/definitions/${def}`}, defs[def]));
+    return schemas;
+  },
+
+  normalize(schema) {
+    return Object.assign({}, schema, {
+      definitions: this.normalizeDefs(schema.definitions),
+      paths: this.normalizePaths(schema.paths)
+    });
+  },
+
+  load(fn) {
+    return refParse.bundle(fn).then(schema => this.normalize(schema));
   }
 }
