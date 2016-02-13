@@ -12,7 +12,7 @@ paths:
         - in: body
           name: test
           schema:
-            $ref: "#/definitions/Test"
+            $ref: "#/definitions/test"
       x-action: r.expr([1,2,3]).map(r.row.mul(2))
   /test/:n:
     get:
@@ -69,7 +69,7 @@ paths:
         r.db('chat').table('messages')
          .orderBy(r.desc('time')).limit(params.limit)
 definitions:
-  Test:
+  test:
     type: object
     properties:
       qwerty: {type: string}

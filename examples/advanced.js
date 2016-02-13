@@ -19,7 +19,7 @@ class MyHandler extends router.RequestHandler {
 
 app.use(require("kcors")());
 app.use(require("koa-bodyparser")());
-app.use(router.middleware({
+app.use(router.middleware.koa({
   handler: new MyHandler({context: {r: r}})
 }));
 

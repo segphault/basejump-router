@@ -82,6 +82,7 @@ class RequestHandler {
     let match = this.routes.findMatch(req.method, req.path);
     if (!match) return null;
 
+    req.params = req.params || {};
     req.params.path = match.params;
 
     let params = this.processParams(match.route.parameters, req.params);
