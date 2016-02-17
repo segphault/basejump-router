@@ -5,6 +5,7 @@ var ajv = require("ajv");
 var bluebird = require("bluebird");
 
 var RouteManager = require("./routes");
+var CollectionManager = require("./collections");
 var serialization = require("./serialization");
 
 class RequestHandler {
@@ -13,6 +14,7 @@ class RequestHandler {
 
     this.schemas = ajv({removeAdditional: true});
     this.routes = new RouteManager();
+    this.collections = new CollectionManager();
 
     if (opts.routes)
       this.routes.setRoute(opts.routes);
@@ -21,9 +23,11 @@ class RequestHandler {
       serialization.load(opts.swagger).then(schema => {
         this.routes.setRoute(schema.paths);
         this.schemas.addSchema(schema.definitions);
+        this.collections.setTemplate(schema.templates);
+        this.collections.setCollection(schema.collections);
       })
       .catch(err => {
-        console.log("Failed to parse Swagger schema:", err);
+        console.log("Failed to parse Swagger schema:\n", err.stack);
       });
 
     this.actionField = opts.actionField || "x-action";
@@ -60,35 +64,44 @@ class RequestHandler {
     if (!params) return {};
     let output = {};
 
-    for (let param of params)
+    for (let param of params) {
+      if (param.schema === "@")
+        param.schema = `#/definitions/${input.collection}`;
+
       output[param.name] = param.in === "body" ?
                            this.processBody(param, input) :
                            this.processParam(param, input);
+    }
+
     return output;
   }
 
-  sandbox(code, params) {
-    let sandbox = Object.assign(this.context || {}, {params: params});
-    return vm.runInNewContext(code, sandbox);
+  sandbox(code, context) {
+    return vm.runInNewContext(code, context);
   }
 
-  execute(route, params) {
+  execute(route, context) {
     return route[this.actionField] ?
-           this.sandbox(route[this.actionField], params) :
+           this.sandbox(route[this.actionField], context) :
            "Route Action Not Implemented";
   }
 
   handle(req) {
-    let match = this.routes.findMatch(req.method, req.path);
+    let match = this.routes.findMatch(req.method, req.path) ||
+                this.collections.findMatch(req.method, req.path);
+
     if (!match) return null;
 
     req.params = req.params || {};
     req.params.path = match.params;
+    req.params.collection = match.collection;
 
-    let params = this.processParams(match.route.parameters, req.params);
-    let output = this.callback(match.route, params);
+    let context = Object.assign({}, this.context, {
+      collection: match.collection,
+      params: this.processParams(match.route.parameters, req.params)
+    });
 
-    return bluebird.resolve(output);
+    return bluebird.resolve(this.callback(match.route, context));
   }
 }
 

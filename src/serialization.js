@@ -11,16 +11,33 @@ module.exports = {
     return routes;
   },
 
-  normalizeDefs(defs) {
+  normalizeDefinitions(defs) {
     let schemas = [];
     for (var def of Object.keys(defs))
-      schemas.push(Object.assign({}, {id: `#/definitions/${def}`}, defs[def]));
+      schemas.push(Object.assign({id: `#/definitions/${def}`}, defs[def]));
     return schemas;
+  },
+
+  normalizeTemplates(items) {
+    let output = [];
+    for (var i of Object.keys(items))
+      output.push({name: i, routes: this.normalizePaths(items[i])});
+    return output;
+  },
+
+  normalizeCollections(items) {
+    let output = [];
+    for (var c of Object.keys(items))
+      output.push(Object.assign({name: c}, items[c],
+        {routes: this.normalizePaths(items[c].routes)}));
+    return output;
   },
 
   normalize(schema) {
     return Object.assign({}, schema, {
-      definitions: this.normalizeDefs(schema.definitions),
+      templates: this.normalizeTemplates(schema["x-templates"]),
+      collections: this.normalizeCollections(schema["x-collections"]),
+      definitions: this.normalizeDefinitions(schema.definitions),
       paths: this.normalizePaths(schema.paths)
     });
   },
@@ -28,4 +45,4 @@ module.exports = {
   load(fn) {
     return refParse.bundle(fn).then(schema => this.normalize(schema));
   }
-}
+};

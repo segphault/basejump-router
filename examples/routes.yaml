@@ -14,12 +14,7 @@ paths:
           schema:
             $ref: "#/definitions/test"
       x-action: r.expr([1,2,3]).map(r.row.mul(2))
-  /test/:n:
-    get:
-      parameters:
-        - {in: path, name: n, type: string}
-      x-action: r.expr(params.n)
-  /fellowship:
+  /test/fellowship:
     get:
       x-action: r.db('test').table('fellowship')
     post:
@@ -27,19 +22,19 @@ paths:
         - in: body
           name: member
           schema:
-            type: object
-            properties:
-              name: {type: string}
-              species: {type: string}
-            required: ["name", "species"]
-            additionalProperties: false
+            $ref: "#/definitions/fellowship"
       x-action: r.db('test').table('fellowship').insert(params.member)
-  /fellowship/:species:
+  /test/fellowship/:species:
     get:
       parameters:
         - {in: path, name: species, required: true, type: string}
       x-action: >
         r.db("test").table("fellowship").filter({species: params.species})
+  /test/:n:
+    get:
+      parameters:
+        - {in: path, name: n, type: string}
+      x-action: r.expr(params.n)
   /messages:
     get:
       parameters:
@@ -68,7 +63,64 @@ paths:
       x-action: >
         r.db('chat').table('messages')
          .orderBy(r.desc('time')).limit(params.limit)
+x-collections:
+  fellowship:
+    path: "/api/lotr/fellowship"
+    template:
+      $ref: "#/x-templates/default"
+    schema:
+      $ref: "#/definitions/fellowship"
+    routes:
+      /blah:
+        get:
+          x-action: r.expr([3,2,1]).map(r.row.mul(2))
+        post:
+          parameters:
+            - in: body
+              name: member
+              schema: "@"
+          x-action: r.table(collection).insert(params.member)
+x-templates:
+  default:
+    /:
+      get:
+        x-action: r.table(collection)
+      post:
+        parameters:
+          - in: body
+            name: member
+            schema: "@"
+        x-action: r.table(collection).insert(params.member)
+    /:id":
+      get:
+        parameters:
+          - in: path
+            name: id
+            type: string
+        x-action: r.table(collection).get(params.id)
+      put:
+        parameters:
+          - in: path
+            name: id
+            type: string
+          - in: body
+            name: body
+            schema: "@"
+        x-action: r.table(collection).get(params.id).update(params.body)
+      delete:
+        parameters:
+          - in: path
+            name: id
+            type: string
+        x-action: r.table(collection).get(params.id).delete()
 definitions:
+  fellowship:
+    type: object
+    properties:
+      name: {type: string}
+      species: {type: string}
+    required: ["name", "species"]
+    additionalProperties: false
   test:
     type: object
     properties:
