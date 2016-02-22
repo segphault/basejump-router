@@ -45,7 +45,7 @@ class CollectionManager {
   findMatch(method, path) {
     for (let collection of this.collections.values()) {
       let match = collection.routes.findMatch(method, path);
-      if (match) return Object.assign({collection: collection.name}, match);
+      if (match) return Object.assign({collection: collection}, match);
     }
   }
 }

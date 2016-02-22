@@ -35,10 +35,10 @@ module.exports = {
 
   normalize(schema) {
     return Object.assign({}, schema, {
-      templates: this.normalizeTemplates(schema["x-templates"]),
-      collections: this.normalizeCollections(schema["x-collections"]),
-      definitions: this.normalizeDefinitions(schema.definitions),
-      paths: this.normalizePaths(schema.paths)
+      templates: this.normalizeTemplates(schema["x-templates"] || {}),
+      collections: this.normalizeCollections(schema["x-collections"] || {}),
+      definitions: this.normalizeDefinitions(schema.definitions || {}),
+      paths: this.normalizePaths(schema.paths || {})
     });
   },
 

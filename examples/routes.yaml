@@ -22,7 +22,7 @@ paths:
         - in: body
           name: member
           schema:
-            $ref: "#/definitions/fellowship"
+            $ref: "#/definitions/fellowshipMember"
       x-action: r.db('test').table('fellowship').insert(params.member)
   /test/fellowship/:species:
     get:
@@ -69,7 +69,7 @@ x-collections:
     template:
       $ref: "#/x-templates/default"
     schema:
-      $ref: "#/definitions/fellowship"
+      $ref: "#/definitions/fellowshipMember"
     routes:
       /blah:
         get:
@@ -114,7 +114,7 @@ x-templates:
             type: string
         x-action: r.table(collection).get(params.id).delete()
 definitions:
-  fellowship:
+  fellowshipMember:
     type: object
     properties:
       name: {type: string}

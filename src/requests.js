@@ -66,7 +66,7 @@ class RequestHandler {
 
     for (let param of params) {
       if (param.schema === "@")
-        param.schema = `#/definitions/${input.collection}`;
+        param.schema = input.collection.schema;
 
       output[param.name] = param.in === "body" ?
                            this.processBody(param, input) :
@@ -97,7 +97,7 @@ class RequestHandler {
     req.params.collection = match.collection;
 
     let context = Object.assign({}, this.context, {
-      collection: match.collection,
+      collection: (match.collection || {}).name,
       params: this.processParams(match.route.parameters, req.params)
     });
 
