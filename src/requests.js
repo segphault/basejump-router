@@ -8,6 +8,8 @@ var RouteManager = require("./routes");
 var CollectionManager = require("./collections");
 var serialization = require("./serialization");
 
+const sections = ["route", "template", "collection", "schema"];
+
 class RequestHandler {
   constructor(opts) {
     opts = opts || {};
@@ -21,10 +23,8 @@ class RequestHandler {
 
     if (opts.swagger)
       serialization.load(opts.swagger).then(schema => {
-        this.routes.setRoute(schema.paths);
-        this.schemas.addSchema(schema.definitions);
-        this.collections.setTemplate(schema.templates);
-        this.collections.setCollection(schema.collections);
+        for (let section of sections)
+          this[`set${section}`](schema[section]);
       })
       .catch(err => {
         console.log("Failed to parse Swagger schema:\n", err.stack);
@@ -40,7 +40,7 @@ class RequestHandler {
   }
 
   processBody(param, input) {
-    let schema = param.schema["$ref"] || param.schema;
+    let schema = (param.schema || {})["$ref"] || param.schema || "#/definitions/default";
     let check = this.schemas.validate(schema, input.body);
 
     if (!check)
@@ -64,7 +64,9 @@ class RequestHandler {
     if (!params) return {};
     let output = {};
 
-    for (let param of params) {
+    for (let p of params) {
+      let param = Object.assign({}, p);
+
       if (param.schema === "@")
         param.schema = input.collection.schema;
 
@@ -103,6 +105,15 @@ class RequestHandler {
 
     return bluebird.resolve(this.callback(match.route, context));
   }
+
+  setroute(x) { this.routes.setRoute(x); }
+  deleteroute(x) { this.routes.deleteRoute(x); }
+  setcollection(x) { this.collections.setCollection(x); }
+  deletecollection(x) { this.collections.setCollection(x); }
+  settemplate(x) { this.collections.setTemplate(x); }
+  deletetemplate(x) { this.collections.deleteTemplate(x); }
+  setschema(x) { this.schemas.addSchema(x); }
+  deleteschema(x) { this.schemas.deleteSchema(x); }
 }
 
 module.exports = RequestHandler;

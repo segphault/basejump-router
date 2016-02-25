@@ -29,16 +29,16 @@ module.exports = {
     let output = [];
     for (var c of Object.keys(items))
       output.push(Object.assign({name: c}, items[c],
-        {routes: this.normalizePaths(items[c].routes)}));
+        {routes: this.normalizePaths(items[c].routes || {})}));
     return output;
   },
 
   normalize(schema) {
     return Object.assign({}, schema, {
-      templates: this.normalizeTemplates(schema["x-templates"] || {}),
-      collections: this.normalizeCollections(schema["x-collections"] || {}),
-      definitions: this.normalizeDefinitions(schema.definitions || {}),
-      paths: this.normalizePaths(schema.paths || {})
+      template: this.normalizeTemplates(schema["x-templates"] || {}),
+      collection: this.normalizeCollections(schema["x-collections"] || {}),
+      schema: this.normalizeDefinitions(schema.definitions || {}),
+      route: this.normalizePaths(schema.paths || {})
     });
   },
 

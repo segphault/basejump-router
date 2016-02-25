@@ -25,10 +25,10 @@ class CollectionManager {
                      this.templates.get(collection.template["$ref"]) :
                      collection.template;
 
-      let routes = [].concat(collection.routes, template.routes);
-
-      for (let route of routes)
-        route.path = `${collection.path}${route.path}`.replace(/\/$/, "");
+      let routes =
+        [].concat(collection.routes, template.routes)
+        .map(route => Object.assign({}, route,
+              {path: `${collection.path}${route.path}`.replace(/\/$/, "")}));
 
       collection.routes = new RouteManager(routes);
     }
