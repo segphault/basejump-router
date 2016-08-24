@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "ajv": "^3.5.3",
-    "bluebird": "^3.1.1",
     "json-schema-ref-parser": "^2.2.0",
     "route-parser": "0.0.4"
   }

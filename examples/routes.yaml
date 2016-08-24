@@ -4,6 +4,23 @@ info:
   description: Sample API built with Swagger
   version: 1.0.0
 paths:
+  /:
+    get:
+      x-action: >
+        {a: 1}
+  /realtime:
+    get:
+      x-action: >
+        r.db("rethinkdb").table("stats").changes()
+  /realtime2:
+    get:
+      x-action: >
+        r.db('rethinkdb').table('stats').changes().then(cursor => {
+          var stream = new EventEmitter();
+          stream.on("close", () => cursor.close());
+          cursor.each((err, change) => stream.emit('update', change));
+          return stream;
+        });
   /test:
     get:
       x-action: "r.expr([1,2,3])"
@@ -38,7 +55,7 @@ paths:
   /messages:
     get:
       parameters:
-      - {name: limit, in: query, type: number, default: 10}
+        - {name: limit, in: query, type: number, default: 10}
       x-action: >
         r.db('chat').table('messages').orderBy(r.desc('time'))
          .limit(params.limit)

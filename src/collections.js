@@ -1,6 +1,6 @@
-'use strict';
+const RouteManager = require("./routes");
 
-var RouteManager = require("./routes");
+let many = items => items.constructor === Array ? items : [items];
 
 class CollectionManager {
   constructor(collections, templates) {
@@ -8,17 +8,13 @@ class CollectionManager {
     this.templates = new Map();
   }
 
-  many(items) {
-    return items.constructor === Array ? items : [items];
-  }
-
   setTemplate(templates) {
-    for (let template of this.many(templates))
+    for (let template of many(templates))
       this.templates.set(`#/x-templates/${template.name}`, template);
   }
 
   setCollection(collections) {
-    for (let collection of this.many(collections)) {
+    for (let collection of many(collections)) {
       this.collections.set(collection.name, collection);
 
       let template = collection.template["$ref"] ?

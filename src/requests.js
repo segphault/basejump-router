@@ -1,12 +1,10 @@
-'use strict';
+const vm = require("vm");
+const ajv = require("ajv");
+const EventEmitter = require("events");
 
-var vm = require("vm");
-var ajv = require("ajv");
-var bluebird = require("bluebird");
-
-var RouteManager = require("./routes");
-var CollectionManager = require("./collections");
-var serialization = require("./serialization");
+const RouteManager = require("./routes");
+const CollectionManager = require("./collections");
+const serialization = require("./serialization");
 
 const sections = ["route", "template", "collection", "schema"];
 
@@ -100,10 +98,11 @@ class RequestHandler {
 
     let context = Object.assign({}, this.context, {
       collection: (match.collection || {}).name,
-      params: this.processParams(match.route.parameters, req.params)
+      params: this.processParams(match.route.parameters, req.params),
+      EventEmitter: EventEmitter
     });
 
-    return bluebird.resolve(this.callback(match.route, context));
+    return Promise.resolve(this.callback(match.route, context));
   }
 
   setroute(x) { this.routes.setRoute(x); }

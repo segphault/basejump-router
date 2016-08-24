@@ -1,13 +1,26 @@
-'use strict';
-
-var RequestHandler = require("./requests");
+const RequestHandler = require("./requests");
+const ServerRequest = require("./server");
 
 module.exports = {
+  server(opts) {
+    opts = opts || {};
+    let handler = opts.handler || new RequestHandler(opts);
+
+    return server => {
+      server.on("request", (req, res) => {
+        let request = new ServerRequest(req, res);
+        request.parse().then(req => handler.handle(req))
+                       .then(out => request.handle(out))
+                       .catch(err => console.log(err));
+      });
+    };
+  },
+
   sockio(opts) {
     opts = opts || {};
     let handler = opts.handler || new RequestHandler(opts);
 
-    return function(input, callback) {
+    return (input, callback) => {
       if (["get", "put", "post", "delete"].indexOf(input.method) < 0)
         return callback({error: 400, message: "Must provide valid method"});
 

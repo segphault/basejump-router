@@ -1,0 +1,50 @@
+const {parse} = require("url");
+
+class ServerRequest {
+  constructor(request, response) {
+    this.request = request;
+    this.response = response;
+    this.url = parse(request.url, true);
+    this.method = request.method.toLowerCase();
+  }
+
+  parse() {
+    let body = "";
+    return new Promise((resolve, reject) => {
+      this.request.on("data", chunk => body += chunk);
+      this.request.on("end", () => resolve({
+        params: {query: this.url.query, body: body ? JSON.parse(body) : {}},
+        method: this.method, path: this.url.pathname
+      }));
+    });
+  }
+
+  send(data) {
+    this.response.setHeader("Content-Type", "application/json");
+    this.response.end(JSON.stringify(data));
+  }
+
+  stream() {
+    this.response.setHeader("Content-Type", "text/event-stream");
+    this.response.setHeader("Connection", "keep-alive");
+    this.response.write("event: update\n");
+    return data => this.response.write(`data: ${JSON.stringify(data)}\n\n`);
+  }
+
+  onclose(fn) {
+    this.request.connection.on("close", fn);
+  }
+
+  handle(output) {
+    if (output && output.constructor.name === "EventEmitter") {
+      output.on("update", this.stream());
+      this.onclose(() => output.emit("close"));
+    } else if (output && output.constructor.name === "Cursor") {
+      let stream = this.stream();
+      output.each((err, change) => stream(change));
+      this.onclose(() => output.close());
+    } else this.send(output);
+  }
+}
+
+module.exports = ServerRequest;
