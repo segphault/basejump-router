@@ -11,7 +11,7 @@ module.exports = {
         let request = new ServerRequest(req, res);
         request.parse().then(req => handler.handle(req))
                        .then(out => request.handle(out))
-                       .catch(err => console.log(err));
+                       .catch(err => request.handleError(err));
       });
     };
   },

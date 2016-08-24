@@ -31,8 +31,19 @@ class ServerRequest {
     return data => this.response.write(`data: ${JSON.stringify(data)}\n\n`);
   }
 
+  error(err, message) {
+    this.response.writeHead(err, {"Content-Type": "text/plain"});
+    this.response.end(message);
+  }
+
   onclose(fn) {
     this.request.connection.on("close", fn);
+  }
+
+  handleError(err) {
+    if (err.expose)
+      this.error(err.error, err.message);
+    else this.error(500, "Server Error");
   }
 
   handle(output) {

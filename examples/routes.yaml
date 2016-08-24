@@ -142,3 +142,4 @@ definitions:
     type: object
     properties:
       qwerty: {type: string}
+    additionalProperties: false
