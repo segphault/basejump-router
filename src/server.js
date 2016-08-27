@@ -56,6 +56,15 @@ class ServerRequest {
       this.onclose(() => output.close());
     } else this.send(output);
   }
+
+  static attach(handler) {
+    return (req, res) => {
+      let request = new ServerRequest(req, res);
+      request.parse().then(req => handler.handle(req))
+                     .then(out => request.handle(out))
+                     .catch(err => request.handleError(err));
+    }
+  }
 }
 
 module.exports = ServerRequest;

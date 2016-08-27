@@ -2,20 +2,6 @@ const RequestHandler = require("./requests");
 const ServerRequest = require("./server");
 
 module.exports = {
-  server(opts) {
-    opts = opts || {};
-    let handler = opts.handler || new RequestHandler(opts);
-
-    return server => {
-      server.on("request", (req, res) => {
-        let request = new ServerRequest(req, res);
-        request.parse().then(req => handler.handle(req))
-                       .then(out => request.handle(out))
-                       .catch(err => request.handleError(err));
-      });
-    };
-  },
-
   sockio(opts) {
     opts = opts || {};
     let handler = opts.handler || new RequestHandler(opts);
@@ -42,17 +28,9 @@ module.exports = {
     let handler = opts.handler || new RequestHandler(opts);
 
     return function*(next) {
-      let input = {
-        method: this.request.method.toLowerCase(),
-        path: this.request.path.trim().replace(/\/$/,""),
-        params: {
-          body: this.request.body,
-          query: this.request.query
-        }
-      };
-
       try {
-        let output = handler.handle(input);
+        let request = new ServerRequest(this.req, this.res);
+        let output = handler.handle(yield request.parse());
         if (output) this.body = yield output;
       }
       catch (err) {
@@ -60,7 +38,7 @@ module.exports = {
         else throw err;
       }
 
-      return next;
+      yield next;
     };
   }
 };

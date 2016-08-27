@@ -20,6 +20,12 @@ function fatal(message) {
   process.exit(1);
 }
 
+function server(server, opts) {
+  let handler = opts.handler || new RequestHandler(opts);
+  server.on("request", ServerRequest.attach(handler));
+  return server;
+}
+
 if (require.main === module) {
   const path = require("path");
   const fs = require("fs");
@@ -47,15 +53,15 @@ if (require.main === module) {
       catch (err) {fatal("Could not load YAML file: must install js-yaml")}
     }
 
+    let httpServer = require("http").createServer();
     let context = require(path.join(process.cwd(), args.context));
-    let server = require("http").createServer();
+    let opts = {configuration: config, context: context};
 
-    middleware.server({configuration: config, context: context})(server);
-    server.listen(args.port, args.bind, () =>
+    server(httpServer, opts).listen(args.port, args.bind, () =>
       console.log(`Server listening on port \u{1b}[36m${args.port}\u{1b}[0m`));
   });
 }
 
 module.exports = {
-  middleware, RouteManager, RequestHandler, ServerRequest
+  middleware, server, RouteManager, RequestHandler, ServerRequest
 };

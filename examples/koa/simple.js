@@ -24,8 +24,6 @@ const routes = [
   }
 ]
 
-app.use(require("kcors")());
-app.use(require("koa-bodyparser")());
 app.use(router.middleware.koa({
   configuration: {route: routes},
   context: {r: require("rethinkdbdash")({host: "rethinkdb-stable"})}
