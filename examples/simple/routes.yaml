@@ -6,7 +6,8 @@ route:
   - path: /
     method: get
     settings:
-      action: '{"a": 1}'
+      action: >
+        ({a: 1, b: 2, c: 3})
   - path: /realtime
     method: get
     settings:
@@ -89,7 +90,7 @@ schema:
     properties:
       qwerty: {type: string}
     additionalProperties: false
-template:
+blueprint:
   - name: default
     routes:
       - path: /
@@ -134,7 +135,7 @@ template:
 collection:
   - name: fellowship
     path: /api/lotr/fellowship
-    template: default
+    blueprint: default
     schema:
       $ref: fellowshipMember
     routes:

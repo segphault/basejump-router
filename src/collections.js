@@ -3,23 +3,23 @@ const RouteManager = require("./routes");
 let many = items => items.constructor === Array ? items : [items];
 
 class CollectionManager {
-  constructor(collections, templates) {
+  constructor(collections, blueprints) {
     this.collections = new Map();
-    this.templates = new Map();
+    this.blueprints = new Map();
   }
 
-  setTemplate(templates) {
-    for (let template of many(templates))
-      this.templates.set(template.name, template);
+  setBlueprint(blueprints) {
+    for (let blueprint of many(blueprints))
+      this.blueprints.set(blueprint.name, blueprint);
   }
 
   setCollection(collections) {
     for (let collection of many(collections)) {
       this.collections.set(collection.name, collection);
-      let template = this.templates.get(collection.template);
+      let blueprint = this.blueprints.get(collection.blueprint);
 
       let routes =
-        [].concat(collection.routes, template.routes)
+        [].concat(collection.routes, blueprint.routes)
         .map(route => Object.assign({}, route,
               {path: `${collection.path}${route.path}`.replace(/\/$/, "")}));
 
@@ -27,8 +27,8 @@ class CollectionManager {
     }
   }
 
-  deleteTemplate(template) {
-    this.templates.delete(template.name);
+  deleteBlueprint(blueprint) {
+    this.blueprints.delete(blueprint.name);
   }
 
   deleteCollection(collection) {

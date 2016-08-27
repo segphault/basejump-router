@@ -59,7 +59,7 @@ class ServerRequest {
 
   static attach(handler) {
     return (req, res) => {
-      let request = new ServerRequest(req, res);
+      let request = new this(req, res);
       request.parse().then(req => handler.handle(req))
                      .then(out => request.handle(out))
                      .catch(err => request.handleError(err));

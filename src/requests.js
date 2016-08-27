@@ -5,7 +5,7 @@ const EventEmitter = require("events");
 const RouteManager = require("./routes");
 const CollectionManager = require("./collections");
 
-const sections = ["route", "template", "collection", "schema"];
+const sections = ["route", "blueprint", "collection", "schema"];
 
 class RequestHandler {
   constructor(opts) {
@@ -91,7 +91,7 @@ class RequestHandler {
     let context = Object.assign({}, this.context, {
       collection: (match.collection || {}).name,
       params: this.processParams(match.route.parameters, req.params),
-      EventEmitter: EventEmitter
+      EventEmitter: EventEmitter, Promise: Promise
     });
 
     return Promise.resolve(this.callback(match.route, context));
@@ -100,9 +100,9 @@ class RequestHandler {
   setroute(x) { this.routes.setRoute(x); }
   deleteroute(x) { this.routes.deleteRoute(x); }
   setcollection(x) { this.collections.setCollection(x); }
-  deletecollection(x) { this.collections.setCollection(x); }
-  settemplate(x) { this.collections.setTemplate(x); }
-  deletetemplate(x) { this.collections.deleteTemplate(x); }
+  deletecollection(x) { this.collections.deleteCollection(x); }
+  setblueprint(x) { this.collections.setBlueprint(x); }
+  deleteblueprint(x) { this.collections.deleteBlueprint(x); }
   setschema(x) { this.schemas.addSchema(x); }
   deleteschema(x) { this.schemas.deleteSchema(x); }
 }
