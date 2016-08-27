@@ -1,14 +1,12 @@
-'use strict';
-
 const app = require("koa")();
-const router = require("..");
+const router = require("../..");
 const r = require("rethinkdbdash")({host: "rethinkdb-stable"});
 
 class MyHandler extends router.RequestHandler {
   constructor(opts) {
     super(opts);
 
-    r.db("basejump").table("routes")
+    r.db("basejump").table("route")
     .changes({includeInitial: true})
     .then(cursor => cursor.each((err, change) => {
       if (change.old_val) this.routes.deleteRoute(change.old_val);

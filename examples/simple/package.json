@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "js-yaml": "^3.6.1",
+    "rethinkdbdash": "^2.3.21"
+  }
+}

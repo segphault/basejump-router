@@ -10,16 +10,13 @@ class CollectionManager {
 
   setTemplate(templates) {
     for (let template of many(templates))
-      this.templates.set(`#/x-templates/${template.name}`, template);
+      this.templates.set(template.name, template);
   }
 
   setCollection(collections) {
     for (let collection of many(collections)) {
       this.collections.set(collection.name, collection);
-
-      let template = collection.template["$ref"] ?
-                     this.templates.get(collection.template["$ref"]) :
-                     collection.template;
+      let template = this.templates.get(collection.template);
 
       let routes =
         [].concat(collection.routes, template.routes)
@@ -31,7 +28,7 @@ class CollectionManager {
   }
 
   deleteTemplate(template) {
-    this.templates.delete(`#/x-templates/${template.name}`);
+    this.templates.delete(template.name);
   }
 
   deleteCollection(collection) {

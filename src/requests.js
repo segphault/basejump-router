@@ -4,7 +4,6 @@ const EventEmitter = require("events");
 
 const RouteManager = require("./routes");
 const CollectionManager = require("./collections");
-const serialization = require("./serialization");
 
 const sections = ["route", "template", "collection", "schema"];
 
@@ -16,19 +15,12 @@ class RequestHandler {
     this.routes = new RouteManager();
     this.collections = new CollectionManager();
 
-    if (opts.routes)
-      this.routes.setRoute(opts.routes);
+    if (opts.configuration)
+      for (let section of sections)
+        if (opts.configuration[section])
+          this[`set${section}`](opts.configuration[section])
 
-    if (opts.swagger)
-      serialization.load(opts.swagger).then(schema => {
-        for (let section of sections)
-          this[`set${section}`](schema[section]);
-      })
-      .catch(err => {
-        console.log("Failed to parse Swagger schema:\n", err.stack);
-      });
-
-    this.actionField = opts.actionField || "x-action";
+    this.actionField = opts.actionField || "action";
     this.callback = opts.callback || this.execute;
     if (opts.context) this.context = opts.context;
   }
@@ -38,7 +30,7 @@ class RequestHandler {
   }
 
   processBody(param, input) {
-    let schema = (param.schema || {})["$ref"] || param.schema || "#/definitions/default";
+    let schema = (param.schema || {})["$ref"] || param.schema || "default";
     let check = this.schemas.validate(schema, input.body);
 
     if (!check)
