@@ -1,14 +1,11 @@
-'use strict';
+const vm = require("vm");
+const ajv = require("ajv");
+const EventEmitter = require("events");
 
-var vm = require("vm");
-var ajv = require("ajv");
-var bluebird = require("bluebird");
+const RouteManager = require("./routes");
+const CollectionManager = require("./collections");
 
-var RouteManager = require("./routes");
-var CollectionManager = require("./collections");
-var serialization = require("./serialization");
-
-const sections = ["route", "template", "collection", "schema"];
+const sections = ["route", "blueprint", "collection", "schema"];
 
 class RequestHandler {
   constructor(opts) {
@@ -18,19 +15,12 @@ class RequestHandler {
     this.routes = new RouteManager();
     this.collections = new CollectionManager();
 
-    if (opts.routes)
-      this.routes.setRoute(opts.routes);
+    if (opts.configuration)
+      for (let section of sections)
+        if (opts.configuration[section])
+          this[`set${section}`](opts.configuration[section])
 
-    if (opts.swagger)
-      serialization.load(opts.swagger).then(schema => {
-        for (let section of sections)
-          this[`set${section}`](schema[section]);
-      })
-      .catch(err => {
-        console.log("Failed to parse Swagger schema:\n", err.stack);
-      });
-
-    this.actionField = opts.actionField || "x-action";
+    this.actionField = opts.actionField || "action";
     this.callback = opts.callback || this.execute;
     if (opts.context) this.context = opts.context;
   }
@@ -40,7 +30,7 @@ class RequestHandler {
   }
 
   processBody(param, input) {
-    let schema = (param.schema || {})["$ref"] || param.schema || "#/definitions/default";
+    let schema = (param.schema || {})["$ref"] || param.schema || "default";
     let check = this.schemas.validate(schema, input.body);
 
     if (!check)
@@ -100,18 +90,19 @@ class RequestHandler {
 
     let context = Object.assign({}, this.context, {
       collection: (match.collection || {}).name,
-      params: this.processParams(match.route.parameters, req.params)
+      params: this.processParams(match.route.parameters, req.params),
+      EventEmitter: EventEmitter, Promise: Promise
     });
 
-    return bluebird.resolve(this.callback(match.route, context));
+    return Promise.resolve(this.callback(match.route, context));
   }
 
   setroute(x) { this.routes.setRoute(x); }
   deleteroute(x) { this.routes.deleteRoute(x); }
   setcollection(x) { this.collections.setCollection(x); }
-  deletecollection(x) { this.collections.setCollection(x); }
-  settemplate(x) { this.collections.setTemplate(x); }
-  deletetemplate(x) { this.collections.deleteTemplate(x); }
+  deletecollection(x) { this.collections.deleteCollection(x); }
+  setblueprint(x) { this.collections.setBlueprint(x); }
+  deleteblueprint(x) { this.collections.deleteBlueprint(x); }
   setschema(x) { this.schemas.addSchema(x); }
   deleteschema(x) { this.schemas.deleteSchema(x); }
 }

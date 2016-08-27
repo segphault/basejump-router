@@ -1,6 +1,6 @@
-'use strict';
+const RouteParser = require("route-parser");
 
-var RouteParser = require("route-parser");
+let many = items => items.constructor === Array ? items : [items];
 
 class RouteManager {
   constructor(routes) {
@@ -10,7 +10,7 @@ class RouteManager {
   }
 
   setRoute(routes) {
-    for (var route of routes.constructor === Array ? routes : [routes]) {
+    for (var route of many(routes)) {
       route.parsedRoute = new RouteParser(route.path);
       this.routes.get(route.method).set(route.path, route);
     }
