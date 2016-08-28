@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const RouteManager = require("./src/routes");
 const RequestHandler = require("./src/requests");
 const ServerRequest = require("./src/server");
@@ -45,17 +47,17 @@ if (require.main === module) {
     let config = data.toString("utf8");
 
     if (format === ".json")
-      config = JSON.parse(content);
+      config = JSON.parse(config);
 
     if (format === ".yaml") {
       let yamlPath = path.join(process.cwd(), "node_modules", "js-yaml");
       try {config = require(yamlPath).safeLoad(config)}
-      catch (err) {fatal("Could not load YAML file: must install js-yaml")}
+      catch (err) {fatal(`Could not load YAML file:\n${err}`)}
     }
 
     let httpServer = require("http").createServer();
     let context = require(path.join(process.cwd(), args.context));
-    let opts = {configuration: config, context: context};
+    let opts = {config: config, context: context};
 
     server(httpServer, opts).listen(args.port, args.bind, () =>
       console.log(`Server listening on port \u{1b}[36m${args.port}\u{1b}[0m`));

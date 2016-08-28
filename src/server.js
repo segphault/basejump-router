@@ -13,7 +13,11 @@ class ServerRequest {
     return new Promise((resolve, reject) => {
       this.request.on("data", chunk => body += chunk);
       this.request.on("end", () => resolve({
-        params: {query: this.url.query, body: body ? JSON.parse(body) : {}},
+        params: {
+          query: this.url.query,
+          body: body ? JSON.parse(body) : {},
+          header: this.request.headers
+        },
         method: this.method, path: this.url.pathname
       }));
     });
@@ -42,8 +46,10 @@ class ServerRequest {
 
   handleError(err) {
     if (err.expose)
-      this.error(err.error, err.message);
-    else this.error(500, "Server Error");
+      return this.error(err.error, err.message);
+
+    console.log("Request caused error:", err);
+    return this.error(500, "Server Error");
   }
 
   handle(output) {

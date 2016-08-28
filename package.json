@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "ajv": "^3.5.3",
+    "jwt-simple": "^0.5.0",
     "minimist": "^1.2.0",
     "route-parser": "0.0.4"
+  },
+  "bin": {
+    "basejump": "./index.js"
   }
 }

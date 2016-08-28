@@ -25,7 +25,7 @@ const routes = [
 ]
 
 app.use(router.middleware.koa({
-  configuration: {route: routes},
+  config: {route: routes},
   context: {r: require("rethinkdbdash")({host: "rethinkdb-stable"})}
 }));
 

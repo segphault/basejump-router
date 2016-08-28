@@ -30,7 +30,7 @@ const routes = [
 ]
 
 const handler = new router.RequestHandler({
-  configuration: {routes: routes},
+  config: {routes: routes},
   context: {r: require("rethinkdbdash")({host: "rethinkdb-stable"})}
 });
 

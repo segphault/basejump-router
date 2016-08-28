@@ -1,7 +1,10 @@
-metadata:
+application:
   title: Sample Application
   author: Ryan Paul
   version: 0.0.1
+authentication:
+  jwt:
+    secret: "secret goes here"
 route:
   - path: /
     method: get
@@ -26,7 +29,9 @@ route:
   - path: /test
     method: get
     settings:
-      action: r.expr([1,2,3])
+      access:
+        require: user
+      action: r.expr([1,2,3, user])
   - path: /test
     method: post
     settings:
