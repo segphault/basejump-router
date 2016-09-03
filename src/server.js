@@ -4,8 +4,9 @@ class ServerRequest {
   constructor(request, response) {
     this.request = request;
     this.response = response;
-    this.url = parse(request.url, true);
     this.method = request.method.toLowerCase();
+    this.url = parse(request.url, true);
+    this.path = this.url.pathname;
   }
 
   parse() {
@@ -18,7 +19,7 @@ class ServerRequest {
           body: body ? JSON.parse(body) : {},
           header: this.request.headers
         },
-        method: this.method, path: this.url.pathname
+        method: this.method, path: this.path
       }));
     });
   }
@@ -66,7 +67,10 @@ class ServerRequest {
   static attach(handler) {
     return (req, res) => {
       let request = new this(req, res);
-      request.parse().then(req => handler.handle(req))
+      let match = handler.match(request.method, request.path);
+
+      if (!match) return;
+      request.parse().then(req => handler.handle(req, match))
                      .then(out => request.handle(out))
                      .catch(err => request.handleError(err));
     }

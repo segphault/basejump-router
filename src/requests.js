@@ -3,7 +3,6 @@ const ajv = require("ajv");
 const jwt = require("jwt-simple");
 
 const EventEmitter = require("events");
-
 const RouteManager = require("./routes");
 const CollectionManager = require("./collections");
 
@@ -81,25 +80,26 @@ class RequestHandler {
            "Route Action Not Implemented";
   }
 
-  authenticate(access, token) {
+  auth(access, token) {
     if (!this.authConfig) return null;
-
     let {secret} = this.authConfig.jwt;
     let user = token ? jwt.decode(token.replace("Bearer ", ""), secret) : null;
 
     if (!access) return user;
-    if (access.require && (!user || !user.access ||
-                                    !user.access.includes(access.require)))
+    if (access.require && (!user || !user.access || !user.access.includes(access.require)))
       throw {error: 401, message: "Unauthorized", expose: true};
 
     return user;
   }
 
-  handle(req) {
-    let match = this.routes.findMatch(req.method, req.path) ||
-                this.collections.findMatch(req.method, req.path);
+  match(method, path) {
+    return this.routes.findMatch(method, path) ||
+           this.collections.findMatch(method, path);
+  }
 
-    if (!match) return null;
+  handle(req, route) {
+    let match = route || this.match(req.method, req.path);
+    if (!match) return;
 
     req.params = req.params || {};
     req.params.path = match.params;
@@ -108,7 +108,7 @@ class RequestHandler {
     let context = Object.assign({}, this.context, {
       collection: (match.collection || {}).name,
       params: this.processParams(match.route.parameters, req.params),
-      user: this.authenticate(match.route.access, req.params.header.authorization),
+      user: this.auth(match.route.access, req.params.header.authorization),
       EventEmitter: EventEmitter, Promise: Promise
     });
 
