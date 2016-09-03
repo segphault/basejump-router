@@ -4,23 +4,27 @@ class ServerRequest {
   constructor(request, response) {
     this.request = request;
     this.response = response;
+
     this.method = request.method.toLowerCase();
     this.url = parse(request.url, true);
     this.path = this.url.pathname;
+
+    this.params = {
+      query: this.url.query,
+      header: this.request.headers,
+      body: null
+    }
   }
 
   parse() {
     let body = "";
     return new Promise((resolve, reject) => {
+      if (this.params.body) return resolve(this);
       this.request.on("data", chunk => body += chunk);
-      this.request.on("end", () => resolve({
-        params: {
-          query: this.url.query,
-          body: body ? JSON.parse(body) : {},
-          header: this.request.headers
-        },
-        method: this.method, path: this.path
-      }));
+      this.request.on("end", () => {
+        this.params.body = body ? JSON.parse(body) : {};
+        resolve(this);
+      });
     });
   }
 

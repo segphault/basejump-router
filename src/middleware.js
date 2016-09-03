@@ -30,8 +30,15 @@ module.exports = {
     return function*(next) {
       try {
         let request = new ServerRequest(this.req, this.res);
-        let output = handler.handle(yield request.parse());
-        if (output) this.body = yield output;
+        let match = handler.match(request.method, request.path);
+
+        if (match) {
+          if (this.request.body)
+            request.params.body = this.request.body;
+
+          let output = handler.handle(yield request.parse(), match);
+          if (output) this.body = yield output;
+        }
       }
       catch (err) {
         if (err.expose) this.throw(err.error, err.message);
