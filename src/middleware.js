@@ -23,6 +23,12 @@ module.exports = {
     };
   },
 
+  connect(opts) {
+    opts = opts || {};
+    let handler = opts.handler || new RequestHandler(opts);
+    return ServerRequest.attach(handler);
+  },
+
   koa(opts) {
     opts = opts || {};
     let handler = opts.handler || new RequestHandler(opts);

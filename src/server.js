@@ -50,10 +50,8 @@ class ServerRequest {
   }
 
   handleError(err) {
-    if (err.expose)
-      return this.error(err.error, err.message);
-
-    console.log("Request caused error:", err);
+    if (typeof err === "string") return this.error(400, err);
+    if (err.expose) return this.error(err.error, err.message);
     return this.error(500, "Server Error");
   }
 
@@ -69,11 +67,11 @@ class ServerRequest {
   }
 
   static attach(handler) {
-    return (req, res) => {
+    return (req, res, next) => {
       let request = new this(req, res);
       let match = handler.match(request.method, request.path);
 
-      if (!match) return;
+      if (!match) return next ? next() : next;
       request.parse().then(req => handler.handle(req, match))
                      .then(out => request.handle(out))
                      .catch(err => request.handleError(err));

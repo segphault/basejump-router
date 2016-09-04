@@ -9,22 +9,18 @@ const CollectionManager = require("./collections");
 const sections = ["route", "blueprint", "collection", "schema"];
 
 class RequestHandler {
-  constructor(opts) {
-    opts = opts || {};
-
+  constructor({config = {}, context, callback}) {
     this.schemas = ajv({removeAdditional: true});
     this.routes = new RouteManager();
     this.collections = new CollectionManager();
 
-    if (opts.config)
+    if (config)
       for (let section of sections)
-        if (opts.config[section])
-          this[`set${section}`](opts.config[section])
+        if (config[section]) this[`set${section}`](config[section])
 
-    this.authConfig = (opts.config || {}).authentication;
-    this.actionField = opts.actionField || "action";
-    this.callback = opts.callback || this.execute;
-    if (opts.context) this.context = opts.context;
+    this.authConfig = config.authentication;
+    this.callback = callback || this.execute;
+    this.context = context;
   }
 
   convertParam(t, value) {
@@ -35,20 +31,14 @@ class RequestHandler {
     let schema = (param.schema || {})["$ref"] || param.schema || "default";
     let check = this.schemas.validate(schema, input.body);
 
-    if (!check)
-      throw {name: "ParamInvalid", expose: true, error: 400,
-             message: `Invalid parameter: ${this.schemas.errorsText()}`};
-
+    if (!check) throw `Invalid parameter: ${this.schemas.errorsText()}`;
     return input.body;
   }
 
   processParam(param, input) {
     let value = input[param.in][param.name] || param.default;
 
-    if (!value && param.required)
-      throw {name: "ParamMissing", expose: true, error: 400,
-             message: `Missing parameter '${param.name}'`};
-
+    if (!value && param.required) throw `Missing parameter '${param.name}'`;
     return this.convertParam(param.type, value);
   }
 
@@ -75,9 +65,8 @@ class RequestHandler {
   }
 
   execute(route, context) {
-    return route[this.actionField] ?
-           this.sandbox(route[this.actionField], context) :
-           "Route Action Not Implemented";
+    if (!route.action) throw "Route Action Not Implemented";
+    return this.sandbox(route.action, context);
   }
 
   auth(access, token) {

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "connect": "^3.4.1",
+    "rethinkdbdash": "^2.3.21"
+  }
+}
