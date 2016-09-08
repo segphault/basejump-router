@@ -37,7 +37,11 @@ class ServerRequest {
     this.response.setHeader("Content-Type", "text/event-stream");
     this.response.setHeader("Connection", "keep-alive");
     this.response.write("event: update\n");
-    return data => this.response.write(`data: ${JSON.stringify(data)}\n\n`);
+
+    let interval = setInterval(() => this.response.write(" "), 30000);
+    this.response.connection.on("close", () => clearInterval(interval));
+
+    return data => this.response.write(`\ndata: ${JSON.stringify(data)}\n\n`);
   }
 
   error(err, message) {
