@@ -5,7 +5,46 @@ application:
 authentication:
   jwt:
     secret: "secret goes here"
+graphql:
+  - id: bookmark
+    schema: >
+      type Bookmark {
+        title: String
+        url: String
+      }
+
+      type Entry {
+        id: String!
+        shared: Boolean,
+        user: String!
+        bookmark: Bookmark
+      }
+
+      type Query {
+        entry(id: String!): Entry
+        entries: [Entry]
+      }
+    resolvers:
+      - id: entry
+        action: >
+          r.db("basedemo").table("bookmarks").get(params.id).run()
+      - id: entries
+        action: >
+          r.db("basedemo").table("bookmarks").run()
 route:
+  - path: /graphql
+    method: post
+    settings:
+      graphql: bookmark
+      parameters:
+        - in: body
+          name: body
+          schema:
+            type: object
+            properties:
+              query: {type: string}
+      action: >
+        graphql.execute(graphql.schema, params.body.query, graphql.resolvers)
   - path: /
     method: get
     settings:

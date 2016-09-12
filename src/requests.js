@@ -1,18 +1,21 @@
 const vm = require("vm");
 const ajv = require("ajv");
 const jwt = require("jwt-simple");
+const {graphql} = require("graphql");
 
 const EventEmitter = require("events");
 const RouteManager = require("./routes");
 const CollectionManager = require("./collections");
+const GraphQLManager = require("./graphql");
 
-const sections = ["route", "blueprint", "collection", "schema"];
+const sections = ["route", "blueprint", "collection", "schema", "graphql"];
 
 class RequestHandler {
   constructor({config = {}, context, callback}) {
     this.schemas = ajv({removeAdditional: true});
     this.routes = new RouteManager();
     this.collections = new CollectionManager();
+    this.graphql = new GraphQLManager();
 
     if (config)
       for (let section of sections)
@@ -98,8 +101,19 @@ class RequestHandler {
       collection: (match.collection || {}).name,
       params: this.processParams(match.route.parameters, req.params),
       user: this.auth(match.route.access, req.params.header.authorization),
-      EventEmitter: EventEmitter, Promise: Promise
+      EventEmitter: EventEmitter, Promise: Promise, log: console.log
     });
+
+    if (match.route.graphql) {
+      let gql = this.graphql.getSchema(match.route.graphql);
+
+      let resolvers = {};
+      for (let resolver of gql.resolvers)
+        resolvers[resolver.id] = params =>
+          this.execute(resolver, Object.assign({}, context, {params: params}));
+
+      context.graphql = {execute: graphql, schema: gql.schema, resolvers};
+    }
 
     return Promise.resolve(this.callback(match.route, context));
   }
@@ -112,6 +126,8 @@ class RequestHandler {
   deleteblueprint(x) { this.collections.deleteBlueprint(x); }
   setschema(x) { this.schemas.addSchema(x); }
   deleteschema(x) { this.schemas.deleteSchema(x); }
+  setgraphql(x) { this.graphql.setSchema(x); }
+  deletegraphql(x) { this.graphql.deleteSchema(x); }
 }
 
 module.exports = RequestHandler;
