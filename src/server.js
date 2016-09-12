@@ -29,8 +29,13 @@ class ServerRequest {
   }
 
   send(data) {
-    this.response.setHeader("Content-Type", "application/json");
-    this.response.end(JSON.stringify(data));
+    if (typeof data === "string") {
+      this.response.setHeader("Content-Type", "text/html");
+      this.response.end(data);
+    } else {
+      this.response.setHeader("Content-Type", "application/json");
+      this.response.end(JSON.stringify(data));
+    }
   }
 
   stream() {

@@ -42,8 +42,7 @@ module.exports = {
           if (this.request.body)
             request.params.body = this.request.body;
 
-          let output = handler.handle(yield request.parse(), match);
-          if (output) this.body = yield output;
+          request.handle(yield handler.handle(yield request.parse(), match));
         }
       }
       catch (err) {
