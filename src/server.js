@@ -1,4 +1,5 @@
 const {parse} = require("url");
+const {info, error} = require("./utils");
 
 class ServerRequest {
   constructor(request, response) {
@@ -8,6 +9,8 @@ class ServerRequest {
     this.method = request.method.toLowerCase();
     this.url = parse(request.url, true);
     this.path = this.url.pathname;
+    this.ip = request.headers['x-forwarded-for'] ||
+              request.connection.remoteAddress;
 
     this.params = {
       query: this.url.query,
@@ -81,9 +84,14 @@ class ServerRequest {
       let match = handler.match(request.method, request.path);
 
       if (!match) return next ? next() : next;
+      info(`REQUEST: ${request.method} ${request.path} from ${request.ip}`);
+
       request.parse().then(req => handler.handle(req, match))
                      .then(out => request.handle(out))
-                     .catch(err => request.handleError(err));
+                     .catch(err => {
+                       error(`ERROR: ${err}`);
+                       request.handleError(err);
+                     });
     }
   }
 }

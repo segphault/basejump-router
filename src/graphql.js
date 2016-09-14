@@ -1,6 +1,5 @@
 const {buildSchema} = require("graphql");
-
-let many = items => items.constructor === Array ? items : [items];
+const {many} = require("./utils");
 
 class GraphQLManager {
   constructor() {

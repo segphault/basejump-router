@@ -1,6 +1,5 @@
 const RouteManager = require("./routes");
-
-let many = items => items.constructor === Array ? items : [items];
+const {many} = require("./utils");
 
 class CollectionManager {
   constructor(collections, blueprints) {

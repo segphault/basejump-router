@@ -4,6 +4,7 @@ const RouteManager = require("./src/routes");
 const RequestHandler = require("./src/requests");
 const ServerRequest = require("./src/server");
 const middleware = require("./src/middleware");
+const {fatal, log} = require("./src/utils");
 
 const cli = {
   alias: {c: "context", p: "port", h: "help"},
@@ -16,11 +17,6 @@ const usage = `Usage: basejump [options] ROUTES
   -p, --port <port>         Port to use for the server (Default: 8000)
   -b, --bind <host>         Host to bind the server (Default: 0.0.0.0)
 `;
-
-function fatal(message) {
-  console.error(message);
-  process.exit(1);
-}
 
 function server(server, opts) {
   let handler = opts.handler || new RequestHandler(opts);
@@ -60,7 +56,7 @@ if (require.main === module) {
     let opts = {config: config, context: context};
 
     server(httpServer, opts).listen(args.port, args.bind, () =>
-      console.log(`Server listening on port \u{1b}[36m${args.port}\u{1b}[0m`));
+      log(`Server listening on port \u{1b}[36m${args.port}`));
   });
 }
 

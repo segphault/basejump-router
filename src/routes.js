@@ -1,6 +1,5 @@
 const RouteParser = require("route-parser");
-
-let many = items => items.constructor === Array ? items : [items];
+const {many} = require("./utils");
 
 class RouteManager {
   constructor(routes) {
