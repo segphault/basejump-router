@@ -1,18 +1,21 @@
 const vm = require("vm");
 const ajv = require("ajv");
 const jwt = require("jwt-simple");
+const {graphql} = require("graphql");
 
 const EventEmitter = require("events");
 const RouteManager = require("./routes");
 const CollectionManager = require("./collections");
+const GraphQLManager = require("./graphql");
 
-const sections = ["route", "blueprint", "collection", "schema"];
+const sections = ["route", "blueprint", "collection", "schema", "graphql"];
 
 class RequestHandler {
   constructor({config = {}, context, callback}) {
     this.schemas = ajv({removeAdditional: true});
     this.routes = new RouteManager();
     this.collections = new CollectionManager();
+    this.graphql = new GraphQLManager();
 
     if (config)
       for (let section of sections)
@@ -27,17 +30,15 @@ class RequestHandler {
     return t === "number" ? Number(value) : value;
   }
 
-  processBody(param, input) {
-    let schema = (param.schema || {})["$ref"] || param.schema || "default";
-    let check = this.schemas.validate(schema, input.body);
-
+  processBody(param, {body}) {
+    let schema = (param.schema || {})["$ref"] || param.schema;
+    let check = schema ? this.schemas.validate(schema, body) : true;
     if (!check) throw `Invalid parameter: ${this.schemas.errorsText()}`;
-    return input.body;
+    return body;
   }
 
   processParam(param, input) {
     let value = input[param.in][param.name] || param.default;
-
     if (!value && param.required) throw `Missing parameter '${param.name}'`;
     return this.convertParam(param.type, value);
   }
@@ -60,13 +61,26 @@ class RequestHandler {
     return output;
   }
 
+  processGraphQL(name, context) {
+    let {schema, resolvers} = this.graphql.getSchema(name);
+    let {query, variables} = context.params.body;
+    let actions = {};
+
+    for (let {id, action} of resolvers)
+      actions[id] = params =>
+        this.sandbox(action, Object.assign({}, context, {params}));
+
+    return graphql(schema, query, actions, variables);
+  }
+
   sandbox(code, context) {
     return vm.runInNewContext(code, context);
   }
 
-  execute(route, context) {
-    if (!route.action) throw "Route Action Not Implemented";
-    return this.sandbox(route.action, context);
+  execute({action, graphql}, context) {
+    if (graphql) return this.processGraphQL(graphql, context);
+    if (action) return this.sandbox(action, context);
+    throw "Route Action Not Implemented";
   }
 
   auth(access, token) {
@@ -112,6 +126,8 @@ class RequestHandler {
   deleteblueprint(x) { this.collections.deleteBlueprint(x); }
   setschema(x) { this.schemas.addSchema(x); }
   deleteschema(x) { this.schemas.deleteSchema(x); }
+  setgraphql(x) { this.graphql.setSchema(x); }
+  deletegraphql(x) { this.graphql.deleteSchema(x); }
 }
 
 module.exports = RequestHandler;
