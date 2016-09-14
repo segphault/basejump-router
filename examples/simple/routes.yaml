@@ -35,16 +35,10 @@ route:
   - path: /graphql
     method: post
     settings:
-      graphql: bookmark
       parameters:
         - in: body
           name: body
-          schema:
-            type: object
-            properties:
-              query: {type: string}
-      action: >
-        graphql.execute(graphql.schema, params.body.query, graphql.resolvers)
+      graphql: bookmark
   - path: /
     method: get
     settings:

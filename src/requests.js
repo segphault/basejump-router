@@ -30,17 +30,15 @@ class RequestHandler {
     return t === "number" ? Number(value) : value;
   }
 
-  processBody(param, input) {
-    let schema = (param.schema || {})["$ref"] || param.schema || "default";
-    let check = this.schemas.validate(schema, input.body);
-
+  processBody(param, {body}) {
+    let schema = (param.schema || {})["$ref"] || param.schema;
+    let check = schema ? this.schemas.validate(schema, body) : true;
     if (!check) throw `Invalid parameter: ${this.schemas.errorsText()}`;
-    return input.body;
+    return body;
   }
 
   processParam(param, input) {
     let value = input[param.in][param.name] || param.default;
-
     if (!value && param.required) throw `Missing parameter '${param.name}'`;
     return this.convertParam(param.type, value);
   }
@@ -63,13 +61,26 @@ class RequestHandler {
     return output;
   }
 
+  processGraphQL(name, context) {
+    let {schema, resolvers} = this.graphql.getSchema(name);
+    let {query, variables} = context.params.body;
+    let actions = {};
+
+    for (let {id, action} of resolvers)
+      actions[id] = params =>
+        this.sandbox(action, Object.assign({}, context, {params}));
+
+    return graphql(schema, query, actions, variables);
+  }
+
   sandbox(code, context) {
     return vm.runInNewContext(code, context);
   }
 
-  execute(route, context) {
-    if (!route.action) throw "Route Action Not Implemented";
-    return this.sandbox(route.action, context);
+  execute({action, graphql}, context) {
+    if (graphql) return this.processGraphQL(graphql, context);
+    if (action) return this.sandbox(action, context);
+    throw "Route Action Not Implemented";
   }
 
   auth(access, token) {
@@ -101,19 +112,8 @@ class RequestHandler {
       collection: (match.collection || {}).name,
       params: this.processParams(match.route.parameters, req.params),
       user: this.auth(match.route.access, req.params.header.authorization),
-      EventEmitter: EventEmitter, Promise: Promise, log: console.log
+      EventEmitter: EventEmitter, Promise: Promise
     });
-
-    if (match.route.graphql) {
-      let gql = this.graphql.getSchema(match.route.graphql);
-
-      let resolvers = {};
-      for (let resolver of gql.resolvers)
-        resolvers[resolver.id] = params =>
-          this.execute(resolver, Object.assign({}, context, {params: params}));
-
-      context.graphql = {execute: graphql, schema: gql.schema, resolvers};
-    }
 
     return Promise.resolve(this.callback(match.route, context));
   }
