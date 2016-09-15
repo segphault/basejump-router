@@ -53,9 +53,8 @@ if (require.main === module) {
 
     let httpServer = require("http").createServer();
     let context = require(path.join(process.cwd(), args.context));
-    let opts = {config: config, context: context};
 
-    server(httpServer, opts).listen(args.port, args.bind, () =>
+    server(httpServer, {config, context}).listen(args.port, args.bind, () =>
       log(`Server listening on port \u{1b}[36m${args.port}`));
   });
 }

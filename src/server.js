@@ -1,4 +1,5 @@
 const {parse} = require("url");
+const {Server} = require("node-static");
 const {info, error} = require("./utils");
 
 class ServerRequest {
@@ -9,7 +10,7 @@ class ServerRequest {
     this.method = request.method.toLowerCase();
     this.url = parse(request.url, true);
     this.path = this.url.pathname;
-    this.ip = request.headers['x-forwarded-for'] ||
+    this.ip = request.headers["x-forwarded-for"] ||
               request.connection.remoteAddress;
 
     this.params = {
@@ -79,20 +80,27 @@ class ServerRequest {
   }
 
   static attach(handler) {
+    let fileServer = handler.settings.static ?
+                     new Server(handler.settings.static.path) : null;
+
     return (req, res, next) => {
       let request = new this(req, res);
       let match = handler.match(request.method, request.path);
 
-      if (!match) return next ? next() : request.error(404, "Not Found");
+      if (!match && fileServer)
+        return fileServer.serve(req, res, (err, result) => {
+          if (err && err.status === 404)
+            return next ? next() : request.error(404, "Not Found")
+        });
+
+      if (!match) return next ? next() : request.error(404, "Not Found")
       info(`REQUEST: ${request.method} ${request.path} from ${request.ip}`);
 
-      request.parse().then(req => handler.handle(req, match))
-                     .then(out => request.handle(out))
-                     .catch(err => {
-                       error(`ERROR: ${err}`);
-                       request.handleError(err);
-                     });
-    }
+      request.parse()
+      .then(req => handler.handle(req, match))
+      .then(out => request.handle(out))
+      .catch(err => {error(`ERROR: ${err}`); request.handleError(err)});
+    };
   }
 }
 

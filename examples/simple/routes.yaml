@@ -2,9 +2,14 @@ application:
   title: Sample Application
   author: Ryan Paul
   version: 0.0.1
-authentication:
-  jwt:
-    secret: "secret goes here"
+settings:
+  authentication:
+    jwt:
+      secret: "secret goes here"
+  database:
+    host: rethinkdb-stable
+  static:
+    path: public
 graphql:
   - id: bookmark
     schema: >
@@ -39,7 +44,7 @@ route:
         - in: body
           name: body
       graphql: bookmark
-  - path: /
+  - path: /sample
     method: get
     settings:
       action: >

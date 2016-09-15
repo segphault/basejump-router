@@ -16,14 +16,14 @@ class RequestHandler {
     this.routes = new RouteManager();
     this.collections = new CollectionManager();
     this.graphql = new GraphQLManager();
+    this.settings = config.settings;
 
-    if (config)
-      for (let section of sections)
-        if (config[section]) this[`set${section}`](config[section])
+    for (let section of sections)
+      if (config[section]) this[`set${section}`](config[section])
 
-    this.authConfig = config.authentication;
+    this.authConfig = config.settings.authentication;
     this.callback = callback || this.execute;
-    this.context = context;
+    this.context = typeof(context) === "function" ? context(this) : context;
   }
 
   convertParam(t, value) {
