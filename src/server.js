@@ -83,7 +83,7 @@ class ServerRequest {
       let request = new this(req, res);
       let match = handler.match(request.method, request.path);
 
-      if (!match) return next ? next() : next;
+      if (!match) return next ? next() : request.error(404, "Not Found");
       info(`REQUEST: ${request.method} ${request.path} from ${request.ip}`);
 
       request.parse().then(req => handler.handle(req, match))
