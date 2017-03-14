@@ -29,15 +29,10 @@ class ServerRequest {
     this.params.body = Object.assign({}, fields, files);
     return this;
   }
-
-  send(data) {
-    if (typeof data === "string") {
-      this.response.setHeader("Content-Type", "text/html");
-      this.response.end(data);
-    } else {
-      this.response.setHeader("Content-Type", "application/json");
-      this.response.end(JSON.stringify(data));
-    }
+  
+  send(contentType, content) {
+    this.response.setHeader("Content-Type", contentType);
+    this.response.end(content);
   }
 
   stream() {
@@ -66,21 +61,10 @@ class ServerRequest {
     return this.error(500, "Server Error");
   }
 
-  handle(output) {
-    if (output && output.constructor.name === "EventEmitter") {
-      output.on("update", this.stream());
-      this.onclose(() => output.emit("close"));
-    } else if (output && output.constructor.name === "Cursor") {
-      let stream = this.stream();
-      output.each((err, change) => stream(change));
-      this.onclose(() => output.close());
-    } else this.send(output);
-  }
-
-  static attach(handler) {
+  static attach(handler, responders) {
     let fileServer = handler.settings.static ?
                      new Server(handler.settings.static.path) : null;
-
+                     
     return (req, res, next) => {
       let request = new this(req, res);
       let match = handler.match(request.method, request.path);
@@ -96,7 +80,7 @@ class ServerRequest {
 
       request.parse()
       .then(req => handler.handle(req, match))
-      .then(out => request.handle(out))
+      .then(out => responders.find(match, request, out).responder(match, request, out))
       .catch(err => {error(`ERROR: ${err}`); request.handleError(err)});
     };
   }

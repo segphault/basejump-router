@@ -3,6 +3,7 @@
 const RouteManager = require("./src/routes");
 const RequestHandler = require("./src/requests");
 const ServerRequest = require("./src/server");
+const Responders = require("./src/responders");
 const middleware = require("./src/middleware");
 const {fatal, log} = require("./src/utils");
 
@@ -20,7 +21,8 @@ const usage = `Usage: basejump [options] ROUTES
 
 function server(server, opts) {
   let handler = opts.handler || new RequestHandler(opts);
-  server.on("request", ServerRequest.attach(handler));
+  let responders = new Responders();
+  server.on("request", ServerRequest.attach(handler, responders));
   return server;
 }
 
