@@ -1,6 +1,14 @@
 const {parse} = require("url");
 const {Server} = require("node-static");
 const {info, error} = require("./utils");
+const formidable = require("formidable");
+
+const bodyParser = request =>
+  new Promise((resolve, reject) => {
+    let form = new formidable.IncomingForm();
+    form.parse(request, (err, fields, files) =>
+      err ? reject(err) : resolve({fields, files}))
+  });
 
 class ServerRequest {
   constructor(request, response) {
@@ -13,23 +21,13 @@ class ServerRequest {
     this.ip = request.headers["x-forwarded-for"] ||
               request.connection.remoteAddress;
 
-    this.params = {
-      query: this.url.query,
-      header: this.request.headers,
-      body: null
-    }
+    this.params = {query: this.url.query, header: this.request.headers};
   }
-
-  parse() {
-    let body = "";
-    return new Promise((resolve, reject) => {
-      if (this.params.body) return resolve(this);
-      this.request.on("data", chunk => body += chunk);
-      this.request.on("end", () => {
-        this.params.body = body ? JSON.parse(body) : {};
-        resolve(this);
-      });
-    });
+  
+  async parse() {
+    let {fields, files} = await bodyParser(this.request);
+    this.params.body = Object.assign({}, fields, files);
+    return this;
   }
 
   send(data) {

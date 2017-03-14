@@ -49,6 +49,16 @@ route:
     settings:
       action: >
         ({a: 1, b: 2, c: 3})
+  - path: /filetest
+    method: post
+    settings:
+      parameters:
+        - in: body
+          name: test
+        - in: body
+          name: asdf
+      action: >
+        ({"asdf": params.asdf, "test": params.test.name})
   - path: /realtime
     method: get
     settings:
@@ -76,9 +86,11 @@ route:
       parameters:
         - in: body
           name: test
-          schema:
-            $ref: test
-      action: r.expr([1,2,3]).map(r.row.mul(2))
+          type: number
+        - in: body
+          name: qwerty
+          type: number
+      action: r.expr([params.test, 2,3]).map(r.row.mul(params.qwerty))
   - path: /test/fellowship
     method: get
     settings:

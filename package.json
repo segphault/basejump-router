@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "ajv": "^3.5.3",
+    "formidable": "^1.1.1",
     "graphql": "^0.7.0",
     "jwt-simple": "^0.5.0",
     "minimist": "^1.2.0",

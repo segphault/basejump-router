@@ -53,7 +53,7 @@ class RequestHandler {
       if (param.schema === "@")
         param.schema = input.collection.schema;
 
-      output[param.name] = param.in === "body" ?
+      output[param.name] = param.in === "body" && param.schema ?
                            this.processBody(param, input) :
                            this.processParam(param, input);
     }
