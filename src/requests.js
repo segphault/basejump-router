@@ -21,9 +21,11 @@ class RequestHandler {
     for (let section of sections)
       if (config[section]) this[`set${section}`](config[section])
 
-    this.authConfig = config.settings.authentication;
     this.callback = callback || this.execute;
     this.context = typeof(context) === "function" ? context(this) : context;
+    
+    if (config.settings && config.settings.authentication)
+      this.authConfig = config.settings.authentication;
   }
 
   convertParam(t, value) {

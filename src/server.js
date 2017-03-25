@@ -1,6 +1,6 @@
 const {parse} = require("url");
-const {Server} = require("node-static");
 const {info, error} = require("./utils");
+const {Server} = require("node-static");
 const formidable = require("formidable");
 
 const bodyParser = request =>
@@ -62,14 +62,14 @@ class ServerRequest {
   }
 
   static attach(handler, responders) {
-    let fileServer = handler.settings.static ?
+    let fileServer = ((handler || {}).settings || {}).static ?
                      new Server(handler.settings.static.path) : null;
                      
     return (req, res, next) => {
       let request = new this(req, res);
       let match = handler.match(request.method, request.path);
 
-      if (!match && fileServer)
+      if (!match && handler.settings && handler.settings.static)
         return fileServer.serve(req, res, (err, result) => {
           if (err && err.status === 404)
             return next ? next() : request.error(404, "Not Found")
