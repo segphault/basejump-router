@@ -8,7 +8,7 @@ const defaultResponders = [
     }
   },
   {
-    name: "json", content: "application/json", object: "Object",
+    name: "json", content: "application/json", object: ["Object", "Array"],
     responder(route, request, output) {
       request.send(this.content, JSON.stringify(output));
     }
@@ -41,8 +41,8 @@ class Responders {
   }
   
   find(route, request, output) {
-    console.log(this.responders.find)
-    return this.responders.find(r => r.object === output.constructor.name);
+    return this.responders.find(r =>
+      many(r.object).includes(output.constructor.name));
   }
 }
 
