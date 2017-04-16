@@ -1,66 +1,94 @@
-#!/usr/bin/env node
+const {EventEmitter} = require("events");
+const {createContext, runInContext} = require("vm");
 
-const RouteManager = require("./src/routes");
-const RequestHandler = require("./src/requests");
-const ServerRequest = require("./src/server");
-const Responders = require("./src/responders");
-const middleware = require("./src/middleware");
-const {fatal, log} = require("./src/utils");
+const Settings = require("./src/settings");
+const Request = require("./src/request");
 
-const cli = {
-  alias: {c: "context", p: "port", h: "help"},
-  default: {context: "context", port: 8000}
-};
+class Router extends EventEmitter {
+  constructor(environment, config, plugins, responders) {
+    super();
+    
+    this.settings = new Settings(plugins, config);
+    this.environment = Object.assign({}, this.settings.environment(), environment);
+    this.context = createContext(this.environment);
+  }
+  
+  add(method, path, settings) {
+    this.settings.setItem("router", {method, path, settings}, "routes");
+  }
+  
+  convertParam(t, value) {
+    return t === "number" ? Number(value) : value;
+  }
 
-const usage = `Usage: basejump [options] ROUTES
+  processParam(param, input) {
+    let value = input[param.in][param.name] || param.default;
+    if (!value && param.required) throw `Missing parameter '${param.name}'`;
+    return this.convertParam(param.type, value);
+  }
 
-  -c, --context <module>    JavaScript module to expose to route handlers
-  -p, --port <port>         Port to use for the server (Default: 8000)
-  -b, --bind <host>         Host to bind the server (Default: 0.0.0.0)
-`;
+  processParams(params, input) {
+    if (!params) return {};
+    let output = {};
 
-function server(server, opts) {
-  let handler = opts.handler || new RequestHandler(opts);
-  let responders = new Responders();
-  server.on("request", ServerRequest.attach(handler, responders));
-  return server;
-}
+    for (let p of params)
+      output[p.name] = this.processParam(p, input);
 
-if (require.main === module) {
-  const path = require("path");
-  const fs = require("fs");
-
-  let args = require("minimist")(process.argv.slice(2), cli);
-  let routefile = args._[0];
-
-  if (!routefile || args.help)
-    return console.log(usage);
-
-  let format = path.extname(routefile);
-  if (format !== ".json" && format !== ".yaml")
-    fatal("Can't identify the format of the route file");
-
-  fs.readFile(routefile, (err, data) => {
-    if (err) fatal(err);
-    let config = data.toString("utf8");
-
-    if (format === ".json")
-      config = JSON.parse(config);
-
-    if (format === ".yaml") {
-      let yamlPath = path.join(process.cwd(), "node_modules", "js-yaml");
-      try {config = require(yamlPath).safeLoad(config)}
-      catch (err) {fatal(`Could not load YAML file:\n${err}`)}
+    return output;
+  }
+  
+  handle(request) {
+    let {action, parameters} = request.route.settings;
+    
+    if (!action)
+      throw "Could not find an action for route";
+    
+    let params = this.processParams(parameters, request.params);
+    for (let paramFunc of this.settings.params())
+      paramFunc(request, params);
+    
+    if (typeof action === "function") return action(params);
+    if (typeof action === "string") return runInContext(action, this.context)(params);
+    
+    let handler = this.settings.findHandler(action.type);
+    if (handler) return handler(request.route, this.context, params);
+    
+    throw "Could not find a handler for route";
+  }
+  
+  async request(req, res, next) {
+    let request = new Request(req, res);
+    
+    try {
+      let match = await this.settings.findRoute(request);
+      if (!match) return next ? next() : request.error(404, "Not Found");
+      
+      request.params.path = match.params;
+      request.route = match.route;
+      
+      if (["put", "post"].includes(request.method))
+        await request.parse();
+      
+      this.emit("request", request);
+      
+      let output = await this.handle(request);
+      let responder = this.settings.findResponder(output);
+      
+      if (!responder)
+        throw `Couldn't find responder for type: ${output.constructor.name}`
+      
+      responder.responder(output, request);
     }
-
-    let httpServer = require("http").createServer();
-    let context = require(path.join(process.cwd(), args.context));
-
-    server(httpServer, {config, context}).listen(args.port, args.bind, () =>
-      log(`Server listening on port \u{1b}[36m${args.port}`));
-  });
+    catch (err) {
+      request.error(err);
+      this.emit("failure", err);
+    }
+  }
 }
 
-module.exports = {
-  middleware, server, RouteManager, RequestHandler, ServerRequest
+const plugins = {
+  router: require("./src/plugins/router"),
+  schema: require("./src/plugins/schema")
 };
+
+module.exports = {Router, Settings, Request, plugins};
