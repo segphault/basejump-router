@@ -1,21 +1,18 @@
 const connect = require("connect");
-const basejump = require("../..");
+const {Basejump} = require("../..");
 const r = require("rethinkdbdash")({host: "rethinkdb-stable"});
 
-const router = new basejump.Router({}, {}, [
-  basejump.plugins.router,
-  basejump.plugins.schema
-]);
+const router = new Basejump();
 
 router.on("failure", err => console.log(err));
 
-router.add("get", "/test", {
+router.get("/test", {
   action(params) {
     return r.range(1,10).map(r.row.mul(2));
   }
 });
 
-router.add("get", "/test/:filter", {
+router.get("/test/:filter", {
   parameters: [
     {in: "path", name: "filter", required: true, type: "number"}
   ],
@@ -25,5 +22,6 @@ router.add("get", "/test/:filter", {
 });
 
 var app = connect();
-app.use((req, res, next) => router.request(req, res, next));
+app.use(router.middleware);
+
 app.listen(8000, () => console.log("Listening on port 8000"));

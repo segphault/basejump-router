@@ -11,8 +11,7 @@
   "dependencies": {
     "ajv": "^4.11.6",
     "formidable": "^1.1.1",
-    "minimist": "^1.2.0",
-    "route-parser": "0.0.4",
+    "route-parser": "0.0.5"
   },
   "bin": {
     "basejump": "./index.js"

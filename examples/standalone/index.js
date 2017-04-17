@@ -1,23 +1,16 @@
-const http = require("http");
-const basejump = require("../..");
+const {Basejump} = require("../..");
 const r = require("rethinkdbdash")({host: "rethinkdb-stable"});
 
-const router = new basejump.Router({}, {}, [
-  basejump.plugins.router,
-  basejump.plugins.schema
-]);
-
-const server = http.createServer((req, res) => router.request(req, res));
-
+const router = new Basejump();
 router.on("failure", err => console.log(err));
 
-router.add("get", "/test/fellowship", {
+router.get("/test/fellowship", {
   action(params) {
     return r.db("test").table("fellowship");
   }
 });
 
-router.add("get", "/test/fellowship/:species", {
+router.get("/test/fellowship/:species", {
   parameters: [
     {in: "path", name: "species", type: "string"}
   ],
@@ -26,7 +19,7 @@ router.add("get", "/test/fellowship/:species", {
   }
 });
 
-router.add("post", "/test/fellowship", {
+router.post("/test/fellowship", {
   parameters: [
     {in: "body", name: "name", type: "string", required: true},
     {in: "body", name: "species", type: "string", required: true}
@@ -36,7 +29,7 @@ router.add("post", "/test/fellowship", {
   }
 });
 
-router.add("post", "/test/schema", {
+router.post("/test/schema", {
   schema: {
     type: "object",
     properties: {
@@ -51,7 +44,7 @@ router.add("post", "/test/schema", {
   }
 });
 
-router.add("post", "/test/schema/:id", {
+router.post("/test/schema/:id", {
   parameters: [
     {in: "path", name: "id", type: "number"},
   ],
@@ -69,4 +62,4 @@ router.add("post", "/test/schema/:id", {
   }
 });
 
-server.listen(8000);
+router.listen(8000, () => console.log("Running"));
