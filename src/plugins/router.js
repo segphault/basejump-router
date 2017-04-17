@@ -16,20 +16,6 @@ const settings = {
 module.exports = {
   name: "router",
   settings,
-  responders: {
-    html: {
-      content: "text/html", object: ["String"],
-      responder(output, request) {
-        request.send(output, {"Content-Type": this.content});
-      }
-    },
-    json: {
-      content: "application/json", object: ["Object", "Array"],
-      responder(output, request) {
-        request.send(JSON.stringify(output), {"Content-Type": this.content});
-      }
-    },
-  },
   route(method, path) {
     for (let route of settings.routes.get(method).values()) {
       let params = route.parsedRoute.match(path);

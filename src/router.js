@@ -48,7 +48,14 @@ class Router {
   }
   
   respond(output, request) {
+    if (typeof output === "string")
+      return request.send(output, {"Content-Type": "text/html"});
+      
+    if (["Object", "Array"].includes(output.constructor.name))
+      return request.send(JSON.stringify(output), {"Content-Type": "application/json"});
+    
     let responder = this.settings.findResponder(output);
+    
     if (!responder)
       throw `Couldn't find responder for type: ${output.constructor.name}`;
       

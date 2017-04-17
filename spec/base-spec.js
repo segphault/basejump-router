@@ -72,8 +72,6 @@ describe("standalone server", () => {
       expect(output.params.prop2).toEqual(150);
       done();
     })
-    
-    
   })
   
   describe("json schema", () => {
@@ -115,5 +113,4 @@ describe("standalone server", () => {
       done();
     });
   });
-  
 });

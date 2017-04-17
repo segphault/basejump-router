@@ -1,3 +1,4 @@
+const {EventEmitter} = require("events");
 const {Basejump} = require("../..");
 const r = require("rethinkdbdash")({host: "rethinkdb-stable"});
 
@@ -13,6 +14,17 @@ router.get("/test/fellowship", {
 router.get("/blah", {
   action: "(params) => ({succes: true})"
 });
+
+router.get("/test/realtime", {
+  action(params) {
+    let ev = new EventEmitter();
+    let interval = setInterval(() =>
+      ev.emit("event", "test", {foo: "bar"}), 2000);
+      
+    ev.on("close", () => clearInterval(interval));
+    return ev;
+  }
+})
 
 router.get("/test/fellowship/:species", {
   parameters: [

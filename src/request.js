@@ -38,10 +38,10 @@ class Request {
   
   stream() {
     this.headers({"Content-Type": "text/event-stream", "Connection": "keep-alive"});
-    this.response.setTimeout(Infinity, () => "SSE Timeout Occured");
+    this.response.setTimeout(0, () => "SSE Timeout Occured");
     
     return (event, data) =>
-      this.response.write(`event: ${event}\ndata: ${data}\n\n`);
+      this.response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   }
 
   error(err) {

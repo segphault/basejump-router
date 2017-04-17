@@ -7,7 +7,8 @@ const Router = require("./src/router");
 
 const defaultPlugins = {
   router: require("./src/plugins/router"),
-  schema: require("./src/plugins/schema")
+  schema: require("./src/plugins/schema"),
+  realtime: require("./src/plugins/realtime")
 };
 
 class Basejump extends EventEmitter {
