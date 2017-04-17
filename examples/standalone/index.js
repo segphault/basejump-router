@@ -10,6 +10,10 @@ router.get("/test/fellowship", {
   }
 });
 
+router.get("/blah", {
+  action: "(params) => ({succes: true})"
+});
+
 router.get("/test/fellowship/:species", {
   parameters: [
     {in: "path", name: "species", type: "string"}

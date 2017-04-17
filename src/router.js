@@ -1,6 +1,5 @@
 const {createContext, runInContext} = require("vm");
 const Settings = require("./settings");
-const Request = require("./request");
 
 class Router {
   constructor(plugins, environment, config) {
@@ -38,7 +37,7 @@ class Router {
     let params = this.processParams(parameters, request.params);
     for (let paramFunc of this.settings.params())
       paramFunc(request, params);
-    
+      
     if (typeof action === "function") return action(params);
     if (typeof action === "string") return runInContext(action, this.context)(params);
     

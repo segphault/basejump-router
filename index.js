@@ -21,7 +21,10 @@ class Basejump extends EventEmitter {
     
     try {
       let match = await this.router.settings.findRoute(request);
-      if (!match) return next ? next() : request.error(404, "Not Found");
+      
+      if (!match)
+        return next ? next() :
+        request.error({expose: true, error: 404, message: "Not Found"});
       
       request.params.path = match.params;
       request.route = match.route;
@@ -29,8 +32,7 @@ class Basejump extends EventEmitter {
       if (["put", "post"].includes(request.method)) await request.parse();
       
       this.emit("request", request);
-      let output = await this.router.handle(request);
-      this.router.respond(output, request);
+      this.router.respond(await this.router.handle(request), request);
     }
     catch (err) {
       request.error(err);

@@ -23,5 +23,4 @@ router.get("/test/:filter", {
 
 var app = connect();
 app.use(router.middleware);
-
 app.listen(8000, () => console.log("Listening on port 8000"));
