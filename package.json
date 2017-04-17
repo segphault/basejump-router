@@ -8,8 +8,11 @@
     "type": "git",
     "url": "https://github.com/segphault/basejump-router.git"
   },
+  "scripts": {
+    "test": "jasmine"
+  },
   "dependencies": {
-    "ajv": "^4.11.6",
+    "ajv": "~3.4.0",
     "formidable": "^1.1.1",
     "route-parser": "0.0.5"
   },

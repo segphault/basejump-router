@@ -10,10 +10,15 @@ const settings = {
   }
 };
 
+function errors() {
+  let messages = settings.schemas.errors.map(e => e.message).join("\n");
+  return {expose: true, error: 400, message: `Invalid body: ${messages}`};
+}
+
 function process(schemaSetting, body) {
   let schema = (schemaSetting || {})["$ref"] || schemaSetting;
   let check = schema ? settings.schemas.validate(schema, body) : true;
-  if (!check) throw `Invalid body: ${settings.schemas.errors[0].message}`;
+  if (!check) throw errors();
   return body;
 }
 
