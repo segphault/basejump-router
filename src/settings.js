@@ -32,11 +32,30 @@ class Settings {
       this.events.emit("delete", {plugin, collection, value});
   }
   
+  applySettings(plugin, settings) {
+    let plug = this.plugins[plugin];
+    
+    if (!plug)
+      throw `Can't apply settings for plugin that isn't present: ${plugin}`;
+      
+    if ((plug.settings || {}).apply)
+      plug.settings.apply(settings);
+  }
+  
+  loadItems(plugin, collections) {
+    for (let [name, collection] of Object.entries(collections))
+      for (let item of collection)
+        this.setItem(plugin, item, name);
+  }
+  
   load(config) {
-    for (let plugin of config.plugins || [])
-      for (let collection of plugin.collections || [])
-        for (let item of collection.items || [])
-          this.setItem(plugin.name, item, collection.name);
+    for (let [plugin, {settings, collections}] of Object.entries(config)) {
+      if (!this.plugins[plugin])
+        throw `Can't load settings for plugin that isn't present: ${plugin}`;
+      
+      if (settings) this.applySettings(plugin, settings);
+      if (collections) this.loadItems(plugin, collections);
+    }
   }
 
   async findRoute({method, path}) {

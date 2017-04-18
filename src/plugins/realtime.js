@@ -6,7 +6,7 @@ module.exports = {
   environment: {EventEmitter},
   responders: {
     events: {
-      content: "text/event-stream", object: ["EventEmitter"],
+      object: ["EventEmitter"],
       responder(output, request) {
         output.on("event", request.stream())
         request.onclose(() => output.emit("close", null));

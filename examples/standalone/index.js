@@ -2,8 +2,19 @@ const {EventEmitter} = require("events");
 const {Basejump} = require("../..");
 const r = require("rethinkdbdash")({host: "rethinkdb-stable"});
 
-const router = new Basejump();
+const router = new Basejump({
+  config: {
+    static: {settings: {path: "public"}}
+  }
+});
+
 router.on("failure", err => console.log(err));
+
+router.get("/test/respond", {
+  response(output, request) {
+    request.send("This is a test", {"Content-Type": "text/plain"});
+  }
+})
 
 router.get("/test/fellowship", {
   action(params) {

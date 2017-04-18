@@ -2,9 +2,9 @@ const {createContext, runInContext} = require("vm");
 const Settings = require("./settings");
 
 class Router {
-  constructor(plugins, environment, config) {
-    this.settings = new Settings(plugins, config);
-    this.environment = Object.assign({}, this.settings.environment(), environment);
+  constructor(settings, environment) {
+    this.settings = settings;
+    this.environment = Object.assign({}, settings.environment(), environment);
     this.context = createContext(this.environment);
   }
   
@@ -30,16 +30,17 @@ class Router {
   
   handle(request) {
     let {action, parameters} = request.route.settings;
-    
-    if (!action)
-      throw "Could not find an action for route";
+    if (!action) return;
     
     let params = this.processParams(parameters, request.params);
     for (let paramFunc of this.settings.params())
       paramFunc(request, params);
       
-    if (typeof action === "function") return action(params);
-    if (typeof action === "string") return runInContext(action, this.context)(params);
+    if (typeof action === "function")
+      return action(params, request);
+    
+    if (typeof action === "string")
+      return runInContext(action, this.context)(params, request);
     
     let handler = this.settings.findHandler(action.type);
     if (handler) return handler(request.route, this.context, params);
@@ -48,6 +49,9 @@ class Router {
   }
   
   respond(output, request) {
+    let {response} = request.route.settings;
+    if (response) return response(output, request);
+    
     if (typeof output === "string")
       return request.send(output, {"Content-Type": "text/html"});
       

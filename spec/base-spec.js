@@ -114,3 +114,35 @@ describe("standalone server", () => {
     });
   });
 });
+
+describe("config parser", () => {
+  let basejump;
+  let server;
+  
+  beforeAll(() => {
+    basejump = new Basejump({
+      config: {
+        router: {
+          collection: {
+            routes: [
+              {
+                path: "/test",
+                method: "get",
+                settings: {
+                  action(params) {
+                    return ({success: true});
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    });
+  });
+   
+  it("can parse route", () => {
+    let routes = basejump.router.settings.plugins.router.settings.routes;
+    expect(routes.get("get").get("/test").settings.action(null).success).toEqual(true);
+  })
+})

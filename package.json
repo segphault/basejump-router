@@ -14,6 +14,7 @@
   "dependencies": {
     "ajv": "~3.4.0",
     "formidable": "^1.1.1",
+    "mime": "^1.3.4",
     "route-parser": "0.0.5"
   },
   "bin": {
