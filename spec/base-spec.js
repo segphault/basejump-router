@@ -120,29 +120,29 @@ describe("config parser", () => {
   let server;
   
   beforeAll(() => {
-    basejump = new Basejump({
-      config: {
-        router: {
-          collection: {
-            routes: [
-              {
-                path: "/test",
-                method: "get",
-                settings: {
-                  action(params) {
-                    return ({success: true});
-                  }
-                }
-              }
-            ]
+    
+    let routes = [
+      {
+        path: "/test",
+        method: "get",
+        settings: {
+          action(params) {
+            return ({success: true});
           }
         }
       }
+    ]
+    
+    basejump = new Basejump({
+      config: {
+        router: {collections: {routes}}
+      }
     });
+    
   });
    
   it("can parse route", () => {
-    let routes = basejump.router.settings.plugins.router.settings.routes;
+    let routes = basejump.router.settings.plugins.router.routes;
     expect(routes.get("get").get("/test").settings.action(null).success).toEqual(true);
   })
 })

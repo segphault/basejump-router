@@ -33,9 +33,9 @@ class Router {
     if (!action) return;
     
     let params = this.processParams(parameters, request.params);
-    for (let paramFunc of this.settings.params())
-      paramFunc(request, params);
-      
+    for (let plugin of Object.values(this.settings.plugins))
+      if (plugin.request) plugin.request(request, params);
+    
     if (typeof action === "function")
       return action(params, request);
     

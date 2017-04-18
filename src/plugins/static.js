@@ -7,26 +7,28 @@ const stat = path =>
   new Promise((resolve, reject) => 
     fs.stat(path, (err, value) =>
       resolve(err ? false : value)));
-
-const settings = {
-  path: null,
-  indexFile: "index.html",
-  apply({path}) {
-    this.path = path;
+      
+class PluginStatic {
+  static get name() { return "static" }
+  
+  constructor(settings) {
+    this.path = null;
+    this.index = "index.html";
   }
-};
-
-module.exports = {
-  name: "static",
-  settings,
+  
+  settings({path, index}) {
+    this.path = path;
+    this.index = index;
+  }
+  
   async route(method, target) {
-    if (!settings.path) return null;
+    if (!this.path) return null;
     
-    let path = join(settings.path, target);
+    let path = join(this.path, target);
     let file = await stat(path);
     
     if (file && file.isDirectory()) {
-      path = join(path, settings.indexFile);
+      path = join(path, this.index);
       file = await stat(path);
     }
     
@@ -37,12 +39,14 @@ module.exports = {
       "Content-Length": file.size
     };
     
-    let routeSettings = {
+    let settings = {
       response(output, request) {
         return request.send(fs.createReadStream(path), headers);
       }
-    }
+    };
     
-    return {params: {}, route: {settings: routeSettings}};
+    return {params: {}, route: {settings}};
   }
-};
+}
+
+module.exports = PluginStatic;

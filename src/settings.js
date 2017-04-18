@@ -6,7 +6,7 @@ class Settings {
     this.plugins = {};
 
     for (let plugin of plugins)
-      this.plugins[plugin.name] = plugin;
+      this.plugins[plugin.name] = new plugin(this);
 
     if (config)
       this.load(config);
@@ -16,7 +16,7 @@ class Settings {
     if (!this.plugins[plugin])
       throw `Can't apply settings to plugin that isn't present: ${plugin}`;
       
-    this.plugins[plugin].settings.setItem(value, collection);
+    this.plugins[plugin].setItem(value, collection);
 
     if (!suppressNotify)
       this.events.emit("set", {plugin, collection, value});
@@ -26,7 +26,7 @@ class Settings {
     if (!this.plugins[plugin])
       throw `Can't remove settings from plugin that isn't present: ${plugin}`;
 
-    this.plugins[plugin].settings.deleteItem(value, collection);
+    this.plugins[plugin].deleteItem(value, collection);
 
     if (!suppressNotify)
       this.events.emit("delete", {plugin, collection, value});
@@ -38,8 +38,8 @@ class Settings {
     if (!plug)
       throw `Can't apply settings for plugin that isn't present: ${plugin}`;
       
-    if ((plug.settings || {}).apply)
-      plug.settings.apply(settings);
+    if (plug.settings)
+      plug.settings(settings);
   }
   
   loadItems(plugin, collections) {
