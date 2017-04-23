@@ -86,12 +86,6 @@ class Settings {
                  .map(plugin => plugin.environment)
                  .filter(environment => environment));
   }
-  
-  params() {
-    return Object.values(this.plugins)
-                 .map(plugin => plugin.params)
-                 .filter(params => params);
-  }
 }
 
 module.exports = Settings;

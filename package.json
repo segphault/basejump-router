@@ -19,5 +19,8 @@
   },
   "bin": {
     "basejump": "./index.js"
+  },
+  "devDependencies": {
+    "jasmine": "^2.5.3"
   }
 }

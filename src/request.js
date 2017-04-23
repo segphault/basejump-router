@@ -44,9 +44,9 @@ class Request {
       this.response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   }
 
-  error(err) {
+  error(err, number) {
     let headers = {"Content-Type": "text/plain"};
-    if (typeof err === "string") this.send(err, headers, 400);
+    if (typeof err === "string") this.send(err, headers, number || 400);
     else if (err.expose) this.send(err.message, headers, err.error);
     else this.send("Server Error", headers, 500);
   }
