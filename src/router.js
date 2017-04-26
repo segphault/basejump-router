@@ -52,10 +52,10 @@ class Router {
     if (response) return response(output, request);
 
     if (typeof output === "string")
-      return request.send(output, {"Content-Type": "text/html"});
+      return request.send(output, "text/html");
 
     if (["Object", "Array"].includes(output.constructor.name))
-      return request.send(JSON.stringify(output), {"Content-Type": "application/json"});
+      return request.json(output);
 
     let responder = this.settings.findResponder(output);
 

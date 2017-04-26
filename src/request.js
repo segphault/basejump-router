@@ -25,21 +25,28 @@ class Request {
     this.params.body = fields;
     this.params.files = files;
   }
-  
+
   headers(headers, code=200) {
     this.response.writeHead(code, headers);
   }
 
   send(content, headers, code=200) {
+    if (headers && typeof headers === "string")
+      headers = {"Content-Type": headers};
     if (headers) this.headers(headers, code);
+
     if (content.pipe) content.pipe(this.response)
     else this.response.end(content);
   }
-  
+
+  json(content) {
+    this.send(JSON.stringify(content), "application/json");
+  }
+
   stream() {
     this.headers({"Content-Type": "text/event-stream", "Connection": "keep-alive"});
     this.response.setTimeout(0, () => "SSE Timeout Occured");
-    
+
     return (event, data) =>
       this.response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   }
@@ -50,7 +57,7 @@ class Request {
     else if (err.expose) this.send(err.message, headers, err.error);
     else this.send("Server Error", headers, 500);
   }
-  
+
   onclose(cb) {
     this.response.connection.on("close", cb);
   }

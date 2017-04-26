@@ -1,5 +1,6 @@
 const {Basejump} = require("..");
-const request = require("./support/request")("http://localhost:8000");
+const config = require("./support/config.js");
+const request = require("./support/request")(config.baseAddress);
 
 describe("standalone server", () => {
   let basejump;
@@ -20,7 +21,7 @@ describe("standalone server", () => {
       action: "(params) => ({success: true, params})"
     });
 
-    server = basejump.listen(8000);
+    server = basejump.listen(config.port);
   });
 
   afterAll(() => server.close());
