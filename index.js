@@ -27,7 +27,7 @@ class Basejump extends EventEmitter {
     try {
       let match = await this.router.settings.findRoute(request);
       if (!match) return next ? next() : request.error("Not Found", 404);
-      if (!match.route) throw {message: "Invalid Route", match, request};
+      if (!match.route) throw new Error("Invalid Route");
 
       request.params.path = match.params;
       request.route = match.route;

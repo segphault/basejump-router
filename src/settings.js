@@ -15,7 +15,7 @@ class Settings {
   setItem(plugin, value, collection, suppressNotify) {
     if (!this.plugins[plugin])
       throw `Can't apply settings to plugin that isn't present: ${plugin}`;
-      
+
     this.plugins[plugin].setItem(value, collection);
 
     if (!suppressNotify)
@@ -31,28 +31,28 @@ class Settings {
     if (!suppressNotify)
       this.events.emit("delete", {plugin, collection, value});
   }
-  
+
   applySettings(plugin, settings) {
     let plug = this.plugins[plugin];
-    
+
     if (!plug)
       throw `Can't apply settings for plugin that isn't present: ${plugin}`;
-      
+
     if (plug.settings)
       plug.settings(settings);
   }
-  
+
   loadItems(plugin, collections) {
     for (let [name, collection] of Object.entries(collections))
       for (let item of collection)
         this.setItem(plugin, item, name);
   }
-  
+
   load(config) {
     for (let [plugin, {settings, collections}] of Object.entries(config)) {
       if (!this.plugins[plugin])
         throw `Can't load settings for plugin that isn't present: ${plugin}`;
-      
+
       if (settings) this.applySettings(plugin, settings);
       if (collections) this.loadItems(plugin, collections);
     }
@@ -72,14 +72,14 @@ class Settings {
       if (plugin.handlers && plugin.handlers[type])
         return plugin.handlers[type]
   }
-  
+
   findResponder(output) {
     for (let plugin of Object.values(this.plugins))
       for (let responder of Object.values(plugin.responders || {}))
         if (responder.object.includes(output.constructor.name))
           return responder;
   }
-  
+
   environment() {
     return Object.assign({},
         ...Object.values(this.plugins)

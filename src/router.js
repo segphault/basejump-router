@@ -28,7 +28,7 @@ class Router {
   }
 
   handle(request) {
-    let {action, parameters} = request.route.settings;
+    let {action, parameters} = request.route.settings || {};
     if (!action) return;
 
     let params = this.processParams(parameters, request.params);
@@ -44,12 +44,15 @@ class Router {
     let handler = this.settings.findHandler(action.type);
     if (handler) return handler(request.route, this.context, params);
 
-    throw "Could not find a handler for route";
+    throw new Error("Could not find a handler for route");
   }
 
   respond(output, request) {
-    let {response} = request.route.settings;
+    let {response} = request.route.settings || {};
     if (response) return response(output, request);
+
+    if (!output)
+      return request.send("", "text/html");
 
     if (typeof output === "string")
       return request.send(output, "text/html");
@@ -60,7 +63,7 @@ class Router {
     let responder = this.settings.findResponder(output);
 
     if (!responder)
-      throw `Couldn't find responder for type: ${output.constructor.name}`;
+      throw new Error(`Couldn't find responder for type: ${output.constructor.name}`);
 
     return responder.responder(output, request);
   }
