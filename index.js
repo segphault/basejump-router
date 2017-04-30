@@ -5,20 +5,20 @@ const Settings = require("./src/settings");
 const Request = require("./src/request");
 const Router = require("./src/router");
 
-const defaultPlugins = {
-  router: require("./src/plugins/router"),
-  schema: require("./src/plugins/schema"),
-  static: require("./src/plugins/static"),
-  realtime: require("./src/plugins/realtime")
+const Plugins = {
+  Router: require("./src/plugins/router"),
+  Schema: require("./src/plugins/schema"),
+  Static: require("./src/plugins/static"),
+  Realtime: require("./src/plugins/realtime")
 };
 
 class Basejump extends EventEmitter {
-  constructor({plugins, config, environment, router} = {}) {
+  constructor({plugins = [], config, environment, router} = {}) {
     super();
 
+    let plugs = [...Object.values(Plugins), ...plugins];
     this.router = router ? router :
-      new Router(new Settings(plugins ||
-        Object.values(defaultPlugins), config), environment);
+                  new Router(new Settings(plugs, config), environment);
   }
 
   async request(req, res, next) {
@@ -27,6 +27,7 @@ class Basejump extends EventEmitter {
     try {
       let match = await this.router.settings.findRoute(request);
       if (!match) return next ? next() : request.error("Not Found", 404);
+      if (!match.route) throw {message: "Invalid Route", match, request};
 
       request.params.path = match.params;
       request.route = match.route;
@@ -42,26 +43,24 @@ class Basejump extends EventEmitter {
     }
   }
 
-  addRoute(method, path, settings) {
-    this.router.settings.setItem("router", {method, path, settings}, "routes");
+  route(method, path, settings) {
+    this.settings.setItem("router", {method, path, settings}, "routes");
   }
-
-  get(...args) { this.addRoute("get", ...args) }
-  put(...args) { this.addRoute("put", ...args) }
-  post(...args) { this.addRoute("post", ...args) }
-  delete(...args) { this.addRoute("delete", ...args) }
 
   listen(...args) {
     return createServer(this.request.bind(this)).listen(...args);
   }
 
+  get settings() {
+    return this.router.settings;
+  }
+
   get middleware() {
     return this.request.bind(this);
   }
-
-  static get plugins() {
-    return defaultPlugins;
-  }
 }
 
-module.exports = {Basejump, Router, Settings, Request};
+for (let meth of Plugins.Router.methods)
+  Basejump.prototype[meth] = function(...args) { this.route(meth, ...args) }
+
+module.exports = {Basejump, Router, Settings, Request, Plugins};

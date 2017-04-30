@@ -118,28 +118,17 @@ describe("standalone server", () => {
 
 describe("config parser", () => {
   let basejump;
-  let server;
 
   beforeAll(() => {
-
     let routes = [
-      {
-        path: "/test",
-        method: "get",
-        settings: {
-          action(params) {
-            return ({success: true});
-          }
-        }
-      }
+      {path: "/test", method: "get", settings: {
+        action() {return ({success: true})}
+      }}
     ]
 
     basejump = new Basejump({
-      config: {
-        router: {collections: {routes}}
-      }
+      config: {router: {collections: {routes}}}
     });
-
   });
 
   it("can parse route", () => {
