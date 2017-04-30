@@ -13,7 +13,8 @@ class PluginRouter {
   }
 
   settings({prefix}) {
-    this.prefix = prefix;
+    if (prefix)
+      this.prefix = prefix;
   }
 
   setItem(route) {

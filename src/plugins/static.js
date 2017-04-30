@@ -12,17 +12,24 @@ class PluginStatic {
   static get name() { return "static" }
 
   constructor() {
-    this.path = null;
     this.index = "index.html";
+    this.prefix = null;
+    this.path = null;
   }
 
-  settings({path, index}) {
-    this.path = path;
-    this.index = index;
+  settings({path, index, prefix}) {
+    if (index) this.index = index;
+    if (prefix) this.prefix = prefix;
+    if (path) this.path = path;
   }
 
   async route(method, target) {
-    if (!this.path) return null;
+    if (!this.path) return;
+
+    if (this.prefix) {
+      if (!target.startsWith(this.prefix)) return;
+      target = target.substring(this.prefix.length);
+    }
 
     let path = join(this.path, target);
     let file = await stat(path);
