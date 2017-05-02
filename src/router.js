@@ -1,37 +1,47 @@
 const {createContext, runInContext} = require("vm");
 
 class Router {
-  constructor(settings, environment) {
+  constructor(settings, environment = {}) {
     this.settings = settings;
-    this.environment = Object.assign({}, settings.environment(), environment);
-    this.context = createContext(this.environment);
+    this.environment = environment;
   }
 
-  convertParam(t, value) {
-    return t === "number" ? Number(value) : value;
+  set environment(env) {
+    let environment = Object.assign({}, this.settings.environment(), env);
+    this.context = createContext(environment);
   }
 
-  processParam(param, input) {
-    let value = input[param.in][param.name] || param.default;
-    if (!value && param.required) throw `Missing parameter '${param.name}'`;
-    return this.convertParam(param.type, value);
-  }
-
-  processParams(params, input) {
+  params(params, input) {
     if (!params) return {};
     let output = {};
 
-    for (let p of params)
-      output[p.name] = this.processParam(p, input);
+    for (let param of params) {
+      let value = input[param.in][param.name] || param.default;
+      if (!value && param.required)
+        throw `Missing parameter '${param.name}'`;
+
+      output[param.name] = param.type === "number" ? Number(value) : value;
+    }
 
     return output;
+  }
+
+  async route(request) {
+    let match = await this.settings.findRoute(request);
+    if (!match) return;
+
+    if (!match.route)
+      throw new Error("Invalid Route");
+
+    request.params.path = match.params;
+    return match.route;
   }
 
   handle(request) {
     let {action, parameters} = request.route.settings || {};
     if (!action) return;
 
-    let params = this.processParams(parameters, request.params);
+    let params = this.params(parameters, request.params);
     for (let plugin of Object.values(this.settings.plugins))
       if (plugin.request) plugin.request(request, params);
 
@@ -61,7 +71,6 @@ class Router {
       return request.json(output);
 
     let responder = this.settings.findResponder(output);
-
     if (!responder)
       throw new Error(`Couldn't find responder for type: ${output.constructor.name}`);
 

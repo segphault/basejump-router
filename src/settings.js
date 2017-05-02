@@ -5,11 +5,19 @@ class Settings {
     this.events = new events.EventEmitter();
     this.plugins = {};
 
-    for (let plugin of plugins)
-      this.plugins[plugin.name] = new plugin(this);
+    for (let plugin of plugins || [])
+      this.setPlugin(plugin);
 
     if (config)
       this.load(config);
+  }
+
+  setPlugin(plugin) {
+    this.plugins[plugin.name] = new plugin(this);
+  }
+
+  deletePlugin(plugin) {
+    delete this.plugins[plugin.name];
   }
 
   setItem(plugin, value, collection, suppressNotify) {
@@ -53,8 +61,11 @@ class Settings {
       if (!this.plugins[plugin])
         throw `Can't load settings for plugin that isn't present: ${plugin}`;
 
-      if (settings) this.applySettings(plugin, settings);
-      if (collections) this.loadItems(plugin, collections);
+      if (settings)
+        this.applySettings(plugin, settings);
+
+      if (collections)
+        this.loadItems(plugin, collections);
     }
   }
 
@@ -70,7 +81,7 @@ class Settings {
   findHandler(type) {
     for (let plugin of Object.values(this.plugins))
       if (plugin.handlers && plugin.handlers[type])
-        return plugin.handlers[type]
+        return plugin.handlers[type];
   }
 
   findResponder(output) {
@@ -83,8 +94,7 @@ class Settings {
   environment() {
     return Object.assign({},
         ...Object.values(this.plugins)
-                 .map(plugin => plugin.environment)
-                 .filter(environment => environment));
+                 .map(plugin => plugin.environment).filter(env => env));
   }
 }
 

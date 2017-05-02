@@ -13,32 +13,32 @@ const Plugins = {
 };
 
 class Basejump extends EventEmitter {
-  constructor({plugins = [], config, environment, router} = {}) {
+  constructor({router, config, environment, plugins = []} = {}) {
     super();
-
-    let plugs = [...Object.values(Plugins), ...plugins];
-    this.router = router ? router :
-                  new Router(new Settings(plugs, config), environment);
+    let p = Object.values(Plugins).concat(plugins);
+    this.router = router || new Router(new Settings(p, config), environment);
   }
 
   async request(req, res, next) {
-    let request = new Request(req, res);
+    let request;
 
     try {
-      let match = await this.router.settings.findRoute(request);
-      if (!match) return next ? next() : request.error("Not Found", 404);
-      if (!match.route) throw new Error("Invalid Route");
+      request = new Request(req, res);
+      request.route = await this.router.route(request);
 
-      request.params.path = match.params;
-      request.route = match.route;
+      if (!request.route) {
+        this.emit("request", request);
+        return next ? next() : request.error("Not Found", 404);
+      }
 
-      if (["put", "post"].includes(request.method)) await request.parse();
+      if (["put", "post"].includes(request.method))
+        await request.parse();
 
       this.emit("request", request);
       this.router.respond(await this.router.handle(request), request);
     }
     catch (err) {
-      request.error(err);
+      if (request) request.error(err);
       this.emit("failure", err);
     }
   }
@@ -48,7 +48,7 @@ class Basejump extends EventEmitter {
   }
 
   listen(...args) {
-    return createServer(this.request.bind(this)).listen(...args);
+    return createServer(this.middleware).listen(...args);
   }
 
   get settings() {
