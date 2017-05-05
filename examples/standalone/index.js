@@ -2,10 +2,9 @@ const {EventEmitter} = require("events");
 const {Basejump} = require("../..");
 const r = require("rethinkdbdash")({host: "rethinkdb-stable"});
 
-const router = new Basejump({
-  config: {
-    static: {settings: {path: "public"}}
-  }
+const router = new Basejump();
+router.configure({
+  static: {settings: {path: "public"}}
 });
 
 router.on("failure", err => console.log(err));
@@ -31,7 +30,7 @@ router.get("/test/realtime", {
     let ev = new EventEmitter();
     let interval = setInterval(() =>
       ev.emit("event", "test", {foo: "bar"}), 2000);
-      
+
     ev.on("close", () => clearInterval(interval));
     return ev;
   }

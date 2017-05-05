@@ -10,7 +10,7 @@ describe("router plugin", () => {
 
     beforeAll(() => {
       basejump = new Basejump();
-      basejump.settings.applySettings("router", {prefix: "/foo"});
+      basejump.plugins.settings("router", {prefix: "/foo"});
       basejump.get("/test", {action() {return {success: true}}});
 
       server = basejump.listen(config.port);

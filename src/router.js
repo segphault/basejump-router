@@ -1,14 +1,13 @@
 const {createContext, runInContext} = require("vm");
 
 class Router {
-  constructor(settings, environment = {}) {
-    this.settings = settings;
+  constructor(plugins, environment = {}) {
+    this.plugins = plugins;
     this.environment = environment;
   }
 
   set environment(env) {
-    let environment = Object.assign({}, this.settings.environment(), env);
-    this.context = createContext(environment);
+    this.context = createContext(Object.assign({}, this.plugins.environment, env));
   }
 
   params(params, input) {
@@ -27,7 +26,7 @@ class Router {
   }
 
   async route(request) {
-    let match = await this.settings.findRoute(request);
+    let match = await this.plugins.route(request);
     if (!match) return;
 
     if (!match.route)
@@ -42,8 +41,7 @@ class Router {
     if (!action) return;
 
     let params = this.params(parameters, request.params);
-    for (let plugin of Object.values(this.settings.plugins))
-      if (plugin.request) plugin.request(request, params);
+    this.plugins.request(request, params);
 
     if (typeof action === "function")
       return action(params, request);
@@ -51,7 +49,7 @@ class Router {
     if (typeof action === "string")
       return runInContext(action, this.context)(params, request);
 
-    let handler = this.settings.findHandler(action.type);
+    let handler = this.plugins.handler(action.type);
     if (handler) return handler(request.route, this.context, params);
 
     throw new Error("Could not find a handler for route");
@@ -70,7 +68,7 @@ class Router {
     if (["Object", "Array"].includes(output.constructor.name))
       return request.json(output);
 
-    let responder = this.settings.findResponder(output);
+    let responder = this.plugins.responder(output);
     if (!responder)
       throw new Error(`Couldn't find responder for type: ${output.constructor.name}`);
 

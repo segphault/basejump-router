@@ -126,13 +126,14 @@ describe("config parser", () => {
       }}
     ]
 
-    basejump = new Basejump({
-      config: {router: {collections: {routes}}}
+    basejump = new Basejump();
+    basejump.configure({
+      router: {collections: {routes}}
     });
   });
 
   it("can parse route", () => {
-    let routes = basejump.router.settings.plugins.router.routes;
+    let routes = basejump.plugins.enabled.router.routes;
     expect(routes.get("get").get("/test").settings.action(null).success).toEqual(true);
   })
 })

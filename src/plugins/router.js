@@ -1,7 +1,54 @@
 const RouteParser = require("route-parser");
 
+const schemas = {
+  settings: {
+    type: "object",
+    properties: {
+      prefix: {type: "string"}
+    }
+  },
+  collections: {
+    route: {
+      type: "object",
+      properties: {
+        method: {type: "string"},
+        path: {type: "string"},
+        settings: {$ref: "#/definitions/settings"}
+      },
+      required: ["method", "path", "settings"],
+      additionalProperties: true,
+      definitions: {
+        param: {
+          type: "object",
+          properties: {
+            in: {type: "string"},
+            name: {type: "string"},
+            type: {type: "string"},
+            required: {type: "boolean"}
+          },
+          required: ["in", "name"],
+          additionalProperties: true
+        },
+        settings: {
+          type: "object",
+          properties: {
+            parameters: {items: {$ref: "#/definitions/param"}},
+            action: {type: ["string", "object"]}
+          },
+          additionalProperties: true
+        },
+      }
+    }
+  }
+};
+
 class PluginRouter {
   static get name() { return "router" }
+  static get schemas() { return schemas }
+
+  static get collections() {
+    return ["route"];
+  }
 
   static get methods() {
     return ["get", "put", "post", "delete"];

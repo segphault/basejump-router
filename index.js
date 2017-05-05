@@ -1,22 +1,17 @@
 const {createServer} = require("http");
 const {EventEmitter} = require("events");
 
-const Settings = require("./src/settings");
+const Plugins = require("./src/plugins");
 const Request = require("./src/request");
 const Router = require("./src/router");
 
-const Plugins = {
-  Router: require("./src/plugins/router"),
-  Schema: require("./src/plugins/schema"),
-  Static: require("./src/plugins/static"),
-  Realtime: require("./src/plugins/realtime")
-};
-
 class Basejump extends EventEmitter {
-  constructor({router, config, environment, plugins = []} = {}) {
+  constructor(environment, plugins = []) {
     super();
-    let p = Object.values(Plugins).concat(plugins);
-    this.router = router || new Router(new Settings(p, config), environment);
+
+    let plugs = Object.values(Plugins.default).concat(plugins);
+    this.router = environment instanceof Router ? environment :
+                  new Router(new Plugins(plugs), environment);
   }
 
   async request(req, res, next) {
@@ -43,16 +38,20 @@ class Basejump extends EventEmitter {
     }
   }
 
+  configure(config) {
+    this.plugins.configure(config);
+  }
+
   route(method, path, settings) {
-    this.settings.setItem("router", {method, path, settings}, "routes");
+    this.plugins.setItem("router", {method, path, settings}, "routes");
   }
 
   listen(...args) {
     return createServer(this.middleware).listen(...args);
   }
 
-  get settings() {
-    return this.router.settings;
+  get plugins() {
+    return this.router.plugins;
   }
 
   get middleware() {
@@ -60,7 +59,7 @@ class Basejump extends EventEmitter {
   }
 }
 
-for (let meth of Plugins.Router.methods)
+for (let meth of Plugins.default.Router.methods)
   Basejump.prototype[meth] = function(...args) { this.route(meth, ...args) }
 
-module.exports = {Basejump, Router, Settings, Request, Plugins};
+module.exports = {Basejump, Router, Request, Plugins};
