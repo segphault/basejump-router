@@ -8,6 +8,9 @@ const stat = path =>
     fs.stat(path, (err, value) =>
       resolve(err ? false : value)));
 
+const route = response =>
+  ({params: {}, route: {settings: {response}}});
+
 class PluginStatic {
   static get name() { return "static" }
 
@@ -37,22 +40,22 @@ class PluginStatic {
     if (file && file.isDirectory()) {
       path = join(path, this.index);
       file = await stat(path);
+
+      if (file && !target.endsWith("/"))
+        return route((output, request) => {
+          let location = `${this.prefix || ""}${target}/`;
+          request.response.writeHead(301, {Location: location});
+          request.response.end();
+        });
     }
 
     if (!file.size) return null;
 
-    let headers = {
-      "Content-Type": mime.lookup(path),
-      "Content-Length": file.size
-    };
-
-    let settings = {
-      response(output, request) {
-        return request.send(fs.createReadStream(path), headers);
-      }
-    };
-
-    return {params: {}, route: {settings}};
+    return route((output, request) =>
+      request.send(fs.createReadStream(path), {
+        "Content-Type": mime.lookup(path),
+        "Content-Length": file.size
+      }));
   }
 }
 
