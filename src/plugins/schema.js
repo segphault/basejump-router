@@ -26,7 +26,7 @@ class PluginSchema {
 
     if (!check) {
       let messages = this.schemas.errors.map(e => e.message).join("\n");
-      throw {expose: true, error: 400, message: `Invalid body: ${messages}`};
+      throw `Invalid body: ${messages}`;
     }
 
     return Object.assign(outputParams, params.body);

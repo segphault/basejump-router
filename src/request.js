@@ -39,8 +39,12 @@ class Request {
     else this.response.end(content);
   }
 
-  json(content) {
-    this.send(JSON.stringify(content), "application/json");
+  json(content, code) {
+    this.send(JSON.stringify(content), "application/json", code);
+  }
+
+  plain(content, code) {
+    this.send(content, "text/plain", code);
   }
 
   stream() {
@@ -51,11 +55,20 @@ class Request {
       this.response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   }
 
-  error(err, number) {
-    let headers = {"Content-Type": "text/plain"};
-    if (typeof err === "string") this.send(err, headers, number || 400);
-    else if (err.expose) this.send(err.message, headers, err.error);
-    else this.send("Server Error", headers, 500);
+  throw(message, code=400) {
+    throw {message, code, expose: code < 500}
+  }
+
+  error(err, code) {
+    if (typeof err === "string")
+      return this.plain(err, code || 400);
+
+    if (err.expose) {
+      if (err.message.constructor.name === "Object")
+        this.json(err.message, err.code);
+      else this.plain(err.message, err.code);
+    }
+    else this.plain("Server Error", code || 500);
   }
 
   onclose(cb) {
