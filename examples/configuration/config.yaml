@@ -1,0 +1,43 @@
+basejump:
+  server:
+    port: 8000
+    bind: 0.0.0.0
+  environment: environment.js
+  settings:
+    router:
+      collections:
+        route:
+          - path: /test/fellowship
+            method: get
+            settings:
+              action: >
+                params => r.db("test").table("fellowship")
+
+          - path: /test/fellowship/:species
+            method: get
+            settings:
+              parameters:
+                - in: path
+                  name: species
+                  type: string
+                  required: true
+              action: >
+                params => r.db("test").table("fellowship").filter(params)
+
+          - path: /test/fellowship
+            method: post
+            settings:
+              schema:
+                $ref: fellowshipMember
+              action: >
+                params => r.db("test").table("fellowship").insert(params)
+    schema:
+      collections:
+        schemas:
+          - id: fellowshipMember
+            type: object
+            properties:
+              name: {type: string}
+              species: {type: string}
+            required: ["name", "species"]
+            additionalProperties: false

@@ -1,6 +1,7 @@
 const {createServer} = require("http");
 const {EventEmitter} = require("events");
 
+const Settings = require("./src/settings");
 const Plugins = require("./src/plugins");
 const Request = require("./src/request");
 const Router = require("./src/router");
@@ -10,6 +11,8 @@ class Basejump extends EventEmitter {
     super();
 
     let plugs = Object.values(Plugins.default).concat(plugins);
+
+    this.settings = new Settings();
     this.router = environment instanceof Router ? environment :
                   new Router(new Plugins(plugs), environment);
   }
@@ -38,6 +41,16 @@ class Basejump extends EventEmitter {
     }
   }
 
+  async load(filename) {
+    await this.settings.load(filename);
+
+    for (let plugin of await this.settings.plugins())
+      this.plugins.add(plugin);
+
+    this.router.environment = await this.settings.environment();
+    this.configure(this.settings.settings());
+  }
+
   configure(config) {
     this.plugins.configure(config);
   }
@@ -62,4 +75,4 @@ class Basejump extends EventEmitter {
 for (let meth of Plugins.default.Router.methods)
   Basejump.prototype[meth] = function(...args) { this.route(meth, ...args) }
 
-module.exports = {Basejump, Router, Request, Plugins};
+module.exports = {Basejump, Router, Request, Settings, Plugins};
