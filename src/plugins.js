@@ -31,7 +31,7 @@ class Plugins {
   }
 
   get collections() {
-    return this.available.filter(plugin => plugin.collections).map(
+    return this.available.filter(plugin => plugin.meta.collections).map(
       ({name, collections}) => ({name, collections}));
   }
 
@@ -54,13 +54,15 @@ class Plugins {
   }
 
   add(plugin) {
+    if (!plugin.meta)
+      throw `Can't load ${plugin.name} because it has no metadata`;
     this.schema(plugin);
     this.available.push(plugin);
-    this.enabled[plugin.name] = new plugin(this);
+    this.enabled[plugin.meta.name] = new plugin(this);
   }
 
   remove(plugin) {
-    delete this.enabled[plugin.name];
+    delete this.enabled[plugin.meta.name];
   }
 
   async route({method, path}) {

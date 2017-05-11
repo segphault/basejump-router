@@ -1,11 +1,15 @@
 const ajv = require("ajv");
 
-class PluginSchema {
-  static get name() { return "schema" }
+const meta = {
+  name: "schema",
+  displayName: "JSON Schema",
+  description: "Validate request bodies with JSON Schema",
+  collections: ["schema"],
+  configurable: true
+};
 
-  static get collections() {
-    return ["schemas"];
-  }
+class PluginSchema {
+  static get meta() { return meta }
 
   constructor() {
     this.schemas = ajv();

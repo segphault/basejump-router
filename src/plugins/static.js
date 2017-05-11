@@ -11,8 +11,27 @@ const stat = path =>
 const route = response =>
   ({params: {}, route: {settings: {response}}});
 
+const schemas = {
+  settings: {
+    type: "object",
+    properties: {
+      prefix: {type: "string"},
+      path: {type: "string"},
+      index: {type: "string"},
+    }
+  }
+};
+
+const meta = {
+  name: "static",
+  displayName: "Static Files",
+  description: "Serve static files",
+  configurable: true,
+  schemas
+}
+
 class PluginStatic {
-  static get name() { return "static" }
+  static get meta() { return meta; }
 
   constructor() {
     this.index = "index.html";

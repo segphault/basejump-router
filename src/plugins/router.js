@@ -42,13 +42,17 @@ const schemas = {
   }
 };
 
-class PluginRouter {
-  static get name() { return "router" }
-  static get schemas() { return schemas }
+const meta = {
+  name: "router",
+  displayName: "Router",
+  description: "Define server endpoints",
+  collections: ["route"],
+  configurable: true,
+  schemas
+}
 
-  static get collections() {
-    return ["route"];
-  }
+class PluginRouter {
+  static get meta() { return meta; }
 
   static get methods() {
     return ["get", "put", "post", "delete"];
@@ -65,8 +69,8 @@ class PluginRouter {
   }
 
   setItem(route) {
-    route.parsedRoute = new RouteParser(route.path);
-    this.routes.get(route.method).set(route.path, route);
+    let parsed = new RouteParser(route.path);
+    this.routes.get(route.method).set(route.path, {route, parsed});
   }
 
   deleteItem(route) {
@@ -79,8 +83,8 @@ class PluginRouter {
       path = path.substring(this.prefix.length);
     }
 
-    for (let route of this.routes.get(method).values()) {
-      let params = route.parsedRoute.match(path);
+    for (let {route, parsed} of this.routes.get(method).values()) {
+      let params = parsed.match(path);
       if (params) return {params, route};
     }
   }

@@ -1,12 +1,19 @@
 const {EventEmitter} = require("events");
 
+const meta = {
+  name: "realtime",
+  displayName: "Realtime",
+  description: "Realtime streaming from endpoints",
+  configurable: false
+};
+
 class PluginRealtime {
-  static get name() { return "realtime" }
-  
+  static get meta() { return meta }
+
   get environment() {
     return {EventEmitter}
   }
-  
+
   get responders() {
     let events = {
       object: ["EventEmitter"],
@@ -15,7 +22,7 @@ class PluginRealtime {
         request.onclose(() => output.emit("close", null));
       }
     };
-    
+
     return {events};
   }
 }
