@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yamlparser");
 
 const readFile = path =>
   new Promise((resolve, reject) =>
@@ -12,10 +11,6 @@ const stat = path =>
     fs.stat(path, (err, value) => resolve(err ? false : value)));
 
 class Settings {
-  static get formats() {
-    return ["json", "yaml"];
-  }
-
   static get pluginSearchPaths() {
     return [
       path.resolve(__dirname, "..", "plugins"),
@@ -31,12 +26,11 @@ class Settings {
 
   async load(filename) {
     this.filename = filename;
+    
+    if (path.extname(filename) !== ".json")
+      throw new Error("Configuration file must be JSON");
 
-    let format = path.extname(filename).substring(1);
-    if (!this.constructor.formats.includes(format) || !this[format])
-      throw new Error(`Unrecognized config format: ${format}`);
-
-    let data = this[format](await readFile(filename));
+    let data = JSON.parse(await readFile(filename));
 
     if (!data.basejump) // TODO: JSON SChema
       throw new Error("Invalid configuration file");
@@ -70,14 +64,6 @@ class Settings {
     if (!this.config.environment) return;
     let file = path.join(process.cwd(), this.config.environment);
     if (await stat(file)) return require(file);
-  }
-
-  json(data) {
-    return JSON.parse(data);
-  }
-
-  yaml(data) {
-    return yaml.eval(data);
   }
 }
 
