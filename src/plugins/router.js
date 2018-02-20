@@ -1,5 +1,3 @@
-const RouteParser = require("route-parser");
-
 const schemas = {
   settings: {
     type: "object",
@@ -69,7 +67,10 @@ class PluginRouter {
   }
 
   setItem(route) {
-    let parsed = new RouteParser(route.path);
+    let pattern = route.path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                            .replace(/\\{([^}]+)\\}/g, "(?<$1>.+)");
+
+    let parsed = new RegExp(`^${pattern}$`);
     this.routes.get(route.method).set(route.path, {route, parsed});
   }
 
@@ -84,8 +85,9 @@ class PluginRouter {
     }
 
     for (let {route, parsed} of this.routes.get(method).values()) {
-      let params = parsed.match(path);
-      if (params) return {params, route};
+      let match = parsed.exec(path);
+      if (match)
+        return {params: match.groups || {}, route};
     }
   }
 }

@@ -17,7 +17,7 @@
                 }
               },
               {
-                "path": "/test/fellowship/:species",
+                "path": "/test/fellowship/{species}",
                 "method": "get",
                 "settings": {
                   "parameters": [

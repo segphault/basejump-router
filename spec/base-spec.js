@@ -11,7 +11,7 @@ describe("standalone server", () => {
 
     basejump.get("/test", {action() {return {success: true}}});
 
-    basejump.get("/test/path/:value", {
+    basejump.get("/test/path/{value}", {
       parameters: [{in: "path", name: "value", type: "number"}],
       action(params) {return params}
     });
