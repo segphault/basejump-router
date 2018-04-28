@@ -1,22 +1,21 @@
 {
   "name": "basejump-router",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Dynamic routing with a declarative configuration",
-  "author": "Ryan Paul <ryan@rethinkdb.com>",
+  "author": "Ryan Paul <ryan@basejump.rest>",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/segphault/basejump-router.git"
   },
   "scripts": {
-    "test": "jasmine"
+    "test": "node tests"
   },
   "dependencies": {
-    "ajv": "6.1.1",
-    "mime": "^1.3.4",
-    "formidable": "^1.1.1"
+    "ajv": "6.4.0",
+    "mime": "2.3.1"
   },
   "devDependencies": {
-    "jasmine": "~2.5.2"
+    "jasmine-core": "^3.1.0"
   }
 }

@@ -1,78 +1,96 @@
+const {createContext, runInContext} = require("vm");
 const {createServer} = require("http");
 const {EventEmitter} = require("events");
 
-const Settings = require("./src/settings");
-const Plugins = require("./src/plugins");
-const Request = require("./src/request");
-const Router = require("./src/router");
+const Settings = require("./settings");
+const Request = require("./request");
+const Plugin = require("./plugins");
 
 class Basejump extends EventEmitter {
-  constructor(environment, plugins = []) {
+  constructor(settings = {plugins: [], environment: {}}) {
     super();
-
-    let plugs = Object.values(Plugins.default).concat(plugins);
-
-    this.settings = new Settings();
-    this.router = environment instanceof Router ? environment :
-                  new Router(new Plugins(plugs), environment);
+    this.settings = settings;
   }
 
-  async request(req, res, next) {
-    let request;
+  middleware(feature, ...args) {
+    let {plugins = []} = this.settings || {};
+    let filtered = plugins.filter(plugin => plugin[feature]);
 
+    let run = n =>
+      filtered[n] &&
+      filtered[n][feature](...args, () => run(n + 1));
+
+    return run(0);
+  }
+
+  async route(request) {
+    let {plugins = []} = this.settings || {};
+
+    for (let plugin of plugins) {
+      if (!plugin[Plugin.route]) continue;
+      
+      let route = await plugin[Plugin.route](request);
+      if (route) return route;
+    }
+  }
+
+  async action(request, route) {
+    let {context} = this.settings || {};
+    let {action} = route.settings || {};
+
+    if (typeof action === "string" && context)
+      return runInContext(action, context)(request);
+
+    if (typeof action !== "function")
+      throw new Error("Invalid action for endpoint");
+
+    return action(request);
+  }
+
+  output(request, output, code=200) {
+    if (!output) return;
+
+    if (output[Symbol.asyncIterator])
+      request.events(output);
+    else request[typeof output === "string" ? "html" : "json"](output, code);
+  }
+
+  error(request, error) {
+    if (typeof error === "string")
+      return request.json({error}, 400);
+
+    if (!error.expose)
+      return request.json({error: "Server Error"}, 500);
+
+    request.json({error: error.message}, error.code);
+  }
+
+  async request(request, next) {
     try {
-      request = new Request(req, res);
-      request.route = await this.router.route(request);
-
-      if (!request.route) {
-        this.emit("request", request);
-        return next ? next() : request.error("Not Found", 404);
-      }
-
-      if (["put", "post"].includes(request.method))
-        await request.parse();
-
+      let route = await this.route(request);
       this.emit("request", request);
-      this.router.respond(await this.router.handle(request), request);
+
+      if (!route)
+        return next ? next() :
+        this.error(request, {message: "Not Found", code: 404, expose: true});
+
+      await this.middleware(Plugin.request, request, route);
+      let output = await this.action(request, route);
+      this.output(request, output);
     }
     catch (err) {
-      if (request) request.error(err);
+      this.error(request, err);
       this.emit("failure", err);
     }
   }
 
-  async load(filename) {
-    await this.settings.load(filename);
-
-    for (let plugin of await this.settings.plugins())
-      this.plugins.add(plugin);
-
-    this.router.environment = await this.settings.environment();
-    this.configure(this.settings.settings());
-  }
-
-  configure(config) {
-    this.plugins.configure(config);
-  }
-
-  route(method, path, settings) {
-    this.plugins.setItem("router", {method, path, settings}, "routes");
+  attach(req, res, next) {
+    this.request(new Request(req, res), next);
   }
 
   listen(...args) {
-    return createServer(this.middleware).listen(...args);
-  }
-
-  get plugins() {
-    return this.router.plugins;
-  }
-
-  get middleware() {
-    return this.request.bind(this);
+    return createServer(this.attach.bind(this)).listen(...args);
   }
 }
 
-for (let meth of Plugins.default.Router.methods)
-  Basejump.prototype[meth] = function(...args) { this.route(meth, ...args) }
-
-module.exports = {Basejump, Router, Request, Settings, Plugins};
+module.exports = {Basejump, Request, Settings, Plugin};
