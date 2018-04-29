@@ -23,6 +23,12 @@ const timestamp = time =>
 const message = (...args) =>
   [color.blue, `[${timestamp()}]`, format(...args), color.reset].join("");
 
+async function yaml(path) {
+  let file = await require("fs/promises").readFile(path);
+  let module = require.resolve("yaml-js", {paths: ["node_modules"]});
+  return require(module).load(file);
+}
+
 process.on("unhandledRejection", reject => console.log(reject));
 
 let args = {};
@@ -39,7 +45,9 @@ for (let argn = 2; argn < process.argv.length - 1; argn++)
 
   try {
     let path = process.argv.slice(2).pop();
-    settings.load(require(resolve(path)));
+    if (path.endsWith(".yaml"))
+      settings.load(await yaml(path));
+    else settings.load(require(resolve(path)));
   }
   catch (err) {
     console.error(message(color.red, "Failed to load configuration:\n", err));
