@@ -33,11 +33,11 @@ class Router {
       this.add(method, path, settings);
   }
 
-  [Plugin.route](request) {
+  [Plugin.route](request, next) {
     let {path} = request;
 
     if (this.prefix) {
-      if (!path.startsWith(this.prefix)) return;
+      if (!path.startsWith(this.prefix)) return next();
       path = path.substring(this.prefix.length);
     }
 
@@ -48,6 +48,12 @@ class Router {
       request.router = {parameters: match.groups || {}, route}
       return route;
     }
+
+    return next();
+  }
+
+  [Plugin.response](request, route, output, next) {
+    request[typeof output === "string" ? "html" : "json"](output);
   }
 }
 

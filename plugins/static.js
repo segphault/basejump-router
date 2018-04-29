@@ -1,4 +1,3 @@
-
 const fs = require("fs");
 const {join} = require("path");
 const mime = require("mime");
@@ -20,13 +19,13 @@ class Static {
     this.prefix = prefix;
   }
 
-  async [Plugin.route](request) {
+  async [Plugin.route](request, next) {
     let {path} = request;
 
-    if (!this.path) return;
+    if (!this.path) return next();
 
     if (this.prefix) {
-      if (!target.startsWith(this.prefix)) return;
+      if (!target.startsWith(this.prefix)) return next();
       path = path.substring(this.prefix.length);
     }
     
@@ -44,7 +43,7 @@ class Static {
         });
     }
 
-    if (!file.size) return null;
+    if (!file.size) return next();
 
     return route(request => request.respond({
       body: fs.createReadStream(target),

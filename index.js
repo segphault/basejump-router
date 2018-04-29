@@ -17,21 +17,9 @@ class Basejump extends EventEmitter {
     let filtered = plugins.filter(plugin => plugin[feature]);
 
     let run = n =>
-      filtered[n] &&
-      filtered[n][feature](...args, () => run(n + 1));
+      filtered[n] && filtered[n][feature](...args, () => run(n + 1));
 
     return run(0);
-  }
-
-  async route(request) {
-    let {plugins = []} = this.settings || {};
-
-    for (let plugin of plugins) {
-      if (!plugin[Plugin.route]) continue;
-      
-      let route = await plugin[Plugin.route](request);
-      if (route) return route;
-    }
   }
 
   async action(request, route) {
@@ -47,36 +35,31 @@ class Basejump extends EventEmitter {
     return action(request);
   }
 
-  output(request, output, code=200) {
-    if (!output) return;
-
-    if (output[Symbol.asyncIterator])
-      request.events(output);
-    else request[typeof output === "string" ? "html" : "json"](output, code);
-  }
-
   error(request, error) {
     if (typeof error === "string")
       return request.json({error}, 400);
 
-    if (!error.expose)
-      return request.json({error: "Server Error"}, 500);
+    if (error.expose || error.code < 500)
+      return request.json({error: error.message}, error.code);
 
-    request.json({error: error.message}, error.code);
+    request.json({error: "Server Error"}, 500);
   }
 
   async request(request, next) {
     try {
-      let route = await this.route(request);
+      let route = await this.middleware(Plugin.route, request);
       this.emit("request", request);
 
       if (!route)
         return next ? next() :
-        this.error(request, {message: "Not Found", code: 404, expose: true});
+        this.error(request, {message: "Not Found", code: 404});
 
       await this.middleware(Plugin.request, request, route);
+      
       let output = await this.action(request, route);
-      this.output(request, output);
+      if (!output) return;
+
+      await this.middleware(Plugin.response, request, route, output);
     }
     catch (err) {
       this.error(request, err);
