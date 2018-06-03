@@ -1,7 +1,7 @@
 const fs = require("fs");
 const {join} = require("path");
 const mime = require("mime");
-const {Plugin} = require("..");
+const Plugin = require(".");
 
 const route = action => ({settings: {action}});
 
@@ -19,13 +19,12 @@ class Static {
     this.prefix = prefix;
   }
 
-  async [Plugin.route](request, next) {
+  async [Plugin.request](request, next) {
     let {path} = request;
-
     if (!this.path) return next();
 
     if (this.prefix) {
-      if (!target.startsWith(this.prefix)) return next();
+      if (!path.startsWith(this.prefix)) return next();
       path = path.substring(this.prefix.length);
     }
     
@@ -36,22 +35,24 @@ class Static {
       target = join(target, this.index);
       file = await stat(target);
 
-      if (file && !path.endsWith("/"))
-        return route(request => {
-          let headers = {Location: `${this.prefix || ""}${target}/`};
-          request.respond({code: 301, headers, body: null});
-        });
+      if (file && !path.endsWith("/")) {
+        let headers = {Location: `${this.prefix || ""}${target}/`};
+        request.respond({code: 301, headers, body: null});
+        return true;
+      }
     }
 
     if (!file.size) return next();
 
-    return route(request => request.respond({
+    request.respond({
       body: fs.createReadStream(target),
       code: 200, headers: {
         "Content-Type": mime.getType(target),
         "Content-Length": file.size
       }
-    }));
+    });
+
+    return true;
   }
 }
 

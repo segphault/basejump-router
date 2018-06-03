@@ -1,10 +1,17 @@
+const vm = require("vm");
+const path = require("path");
+const http = require("http");
+const Plugin = require(".");
 
-const {METHODS} = require("http");
-const {Plugin} = require("..");
+const methods = {
+  response: Symbol("response")
+};
 
-class Router {
+class Router extends Plugin {
   constructor(settings) {
-    this.routes = new Map(METHODS.map(m => [m, new Map()]));
+    super();
+    
+    this.routes = new Map(http.METHODS.map(m => [m, new Map()]));
     this[Plugin.settings](settings);
   }
 
@@ -26,35 +33,66 @@ class Router {
     this.routes.get(method).delete(path);
   }
 
-  [Plugin.settings]({prefix, routes} = {}) {
-    this.prefix = prefix;
-    
-    for (let {method, path, settings} of routes || [])
-      this.add(method, path, settings);
-  }
-
-  [Plugin.route](request, next) {
+  match(request) {
     let {path} = request;
 
     if (this.prefix) {
-      if (!path.startsWith(this.prefix)) return next();
+      if (!path.startsWith(this.prefix)) return;
       path = path.substring(this.prefix.length);
     }
 
     for (let route of this.routes.get(request.method).values()) {
       let match = route.pattern.exec(path);
-      if (!match) continue;
-
-      request.router = {parameters: match.groups || {}, route}
-      return route;
+      if (match)
+        return {route, parameters: match.groups || {}}
     }
-
-    return next();
   }
 
-  [Plugin.response](request, route, output, next) {
-    request[typeof output === "string" ? "html" : "json"](output);
+  action(request, action) {
+    if (typeof action === "string" && this.context)
+      return vm.runInContext(action, this.context)(request);
+
+    if (typeof action !== "function")
+      throw new Error("Invalid action for endpoint");
+
+    return action(request);
+  }
+
+  async [methods.response](request, output) {
+    if (await this[Plugin.middleware](methods.response, request, output)) return;
+
+    let handler = typeof output === "string" ? "html" : "json";
+    request[handler](output);
+  }
+
+  [Plugin.settings]({environment, prefix, routes = []} = {}) {
+    this.prefix = prefix;
+
+    if (environment) {
+      if (typeof environment === "string")
+        environment = require(path.resolve(environment))
+      this.context = vm.createContext(environment);
+    }
+
+    for (let {method, path, settings} of routes)
+      this.add(method, path, settings);
+  }
+ 
+  async [Plugin.request](request, next) {
+    let match = this.match(request);
+    if (!match) return next();
+
+    request.router = match;
+    await this[Plugin.middleware](Plugin.request, request);
+    
+    let {action} = (match.route || {}).settings || {};
+    if (!action) return true;
+
+    let output = await this.action(request, action);
+    if (output) this[methods.response](request, output);
+
+    return true;
   }
 }
 
-module.exports = Router;
+module.exports = Object.assign(Router, methods);

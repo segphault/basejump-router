@@ -1,5 +1,5 @@
 const {EventEmitter} = require("events");
-const {Plugin} = require("..");
+const Router = require("./router");
 
 class Realtime {
   event({event = "data", data = {}} = {}) {
@@ -23,7 +23,7 @@ class Realtime {
     request.respond({code: 200, headers, body: body()});
   }
 
-  [Plugin.response](request, route, output, next) {
+  [Router.response](request, output, next) {
     if (output[Symbol.asyncIterator])
       this.events(request, output);
     else if (output instanceof EventEmitter)

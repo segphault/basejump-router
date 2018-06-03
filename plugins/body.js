@@ -1,10 +1,15 @@
-const {Plugin} = require("..");
+const Plugin = require(".");
 
 const errLength = "Must specify content length";
 const errSize = "Body must not exceed size limit";
 
-class Body {
+const methods = {
+  validate: Symbol("validate")
+}
+
+class Body extends Plugin {
   constructor(settings) {
+    super();
     this[Plugin.settings](settings);
   }
 
@@ -12,7 +17,7 @@ class Body {
     this.limit = limit;
   }
 
-  async [Plugin.request](request, route, next) {
+  async [Plugin.request](request, next) {
     let typeHeader = request.headers["content-type"];
     if (!typeHeader || request.body) return next();
 
@@ -30,10 +35,12 @@ class Body {
 
     let body = "";
     for await (let chunk of request) body += chunk;
-    
+
     request.body = JSON.parse(body);
+    await this[Plugin.middleware](methods.validate, request);
+
     return next();
   }
 }
 
-module.exports = Body;
+module.exports = Object.assign(Body, methods);

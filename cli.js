@@ -2,12 +2,8 @@
 
 const {format} = require("util");
 const {resolve} = require("path");
-const {Basejump, Settings} = require("./index");
-
-const usage = `Usage: basejump [options] ROUTES
-  --port <port>    Port to use for the server (Default: 8000)
-  --bind <host>    Host to bind the server (Default: 0.0.0.0)
-`;
+const Basejump = require(".");
+const Plugin = require("./plugins");
 
 const color = {
   reset: "\u{1b}[0m",
@@ -29,41 +25,35 @@ async function yaml(path) {
   return require(module).load(file);
 }
 
-process.on("unhandledRejection", reject => console.log(reject));
-
-let args = {};
-for (let argn = 2; argn < process.argv.length - 1; argn++)
-  if (process.argv[argn].startsWith("--"))
-    args[process.argv[argn].slice(2)] = process.argv[argn + 1].trim();
-
 (async () => {
-  if (process.argv.length < 3 || args.help)
-    return console.log(usage);
+  if (process.argv.length < 3)
+    return console.log("Usage: basejump ROUTES");
 
-  let settings = new Settings();
-  let app = new Basejump(settings)
+  let app = new Basejump();
 
   try {
     let path = process.argv.slice(2).pop();
-    if (path.endsWith(".yaml"))
-      settings.load(await yaml(path));
-    else settings.load(require(resolve(path)));
+    let config = path.endsWith(".yaml") ? await yaml(path) : require(resolve(path));
+
+    app[Basejump.load](config.servers);
   }
   catch (err) {
     console.error(message(color.red, "Failed to load configuration:\n", err));
     process.exit();
   }
 
-  app.on("failure", err => console.error(message(color.red, "ERROR:", err)));
-  app.on("request", ({method, path, request}) => {
-    let ip = request.headers["x-forwarded-for"] ||
-             request.connection.remoteAddress;
-    console.log(message(color.yellow, "REQUEST:", method, path, "from", ip));
-  });
+  for (let plugin of app[Plugin.plugins].values()) {
+    plugin.on("failure", err =>
+      console.error(message(color.red, "ERROR:", err)));
+    
+    plugin.on("listen", ({port}) =>
+      console.log(message(color.green, "Basejump listening on port", port)));
 
-  let port = args.port || app.settings.server.port || 8000;
-  let bind = args.bind || app.settings.server.bind || "127.0.0.1";
+    plugin.on("request", ({method, path, request}) => {
+      let ip = request.headers["x-forwarded-for"] ||
+              request.connection.remoteAddress;
+      console.log(message(color.yellow, "REQUEST:", method, path, "from", ip));
+    });
+  }
 
-  app.listen(port, bind, () =>
-    console.log(message(color.green, "Basejump listening on port", port)));
 })();
