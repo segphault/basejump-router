@@ -1,37 +1,32 @@
-const {EventEmitter} = require("events");
 const path = require("path");
 
 const methods = {
-  middleware: Symbol("middleware"),
-  factory: Symbol("factory"),
-  plugins: Symbol("plugins"),
   request: Symbol("request"),
   settings: Symbol("settings"),
   load: Symbol("load")
 };
 
-class Plugin extends EventEmitter {
+class Plugins {
   constructor() {
-    super();
-    this[methods.plugins] = new Map(); 
+    this.plugins = new Map();
   }
 
-  [methods.middleware](feature, ...args) {
-    let plugins = [...this[methods.plugins].values()].filter(plugin => plugin[feature]);
+  middleware(feature, ...args) {
+    let plugins = [...this.plugins.values()].filter(plugin => plugin[feature]);
     let run = n => plugins[n] && plugins[n][feature](...args, () => run(n + 1));
     return run(0);
   }
 
-  [methods.factory](name) {
+  factory(name) {
     let paths = [path.resolve(__dirname), "plugins", "node_modules"];
     let ctor = require(require.resolve(name, {paths}));
     return new ctor();
   }
 
-  [methods.load](items, factory) {
+  load(items, factory) {
     for (let {id, settings, module, plugins} of items) {
-      let plugin = (factory || this[methods.factory])(module);
-      this[methods.plugins].set(id || plugin, plugin);
+      let plugin = (factory || this.factory)(module);
+      this.plugins.set(id || plugin, plugin);
 
       if (settings && plugin[methods.settings])
         plugin[methods.settings](settings);
@@ -40,6 +35,10 @@ class Plugin extends EventEmitter {
         plugin[methods.load](plugins);
     }
   }
+
+  [Symbol.iterator]() {
+    return this.plugins.entries();
+  }
 }
 
-module.exports = Object.assign(Plugin, methods);
+module.exports = Object.assign(Plugins, methods);

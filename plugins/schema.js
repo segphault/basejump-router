@@ -1,12 +1,11 @@
 const ajv = require("ajv");
-const Plugin = require(".");
+const Plugins = require(".");
 const Body = require("./body")
 
-class Schema extends Plugin {
+class Schema {
   constructor(settings) {
-    super();
     this.schemas = ajv();
-    this[Plugin.settings](settings);
+    this[Plugins.settings](settings);
   }
 
   add(schema) {
@@ -22,7 +21,7 @@ class Schema extends Plugin {
     return {valid, errors: this.schemas.errors};
   }
 
-  [Plugin.settings]({schemas = []} = {}) {
+  [Plugins.settings]({schemas = []} = {}) {
     for (let schema of schemas)
       this.add(schema);
   }

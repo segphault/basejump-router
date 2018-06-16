@@ -1,10 +1,13 @@
 const {createServer} = require("http");
+const {EventEmitter} = require("events");
 const Request = require("./request");
-const Plugin = require("./plugins");
+const Plugins = require("./plugins");
 
-class Server extends Plugin {
+class Server extends EventEmitter {
   constructor(settings = {}) {
     super();
+
+    this.plugins = new Plugins();
     this.settings = settings;
   }
 
@@ -12,7 +15,7 @@ class Server extends Plugin {
     try {
       this.emit("request", request);
 
-      let handled = await this[Plugin.middleware](Plugin.request, request);
+      let handled = await this.plugins.middleware(Plugins.request, request);
       if (handled) return;
       
       if (next) next()
@@ -46,6 +49,10 @@ class Server extends Plugin {
 
   listen(...args) {
     return createServer(this.attach.bind(this)).listen(...args);
+  }
+
+  [Plugins.load](plugins) {
+    this.plugins.load(plugins);
   }
 }
 

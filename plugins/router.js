@@ -1,18 +1,17 @@
 const vm = require("vm");
 const path = require("path");
 const http = require("http");
-const Plugin = require(".");
+const Plugins = require(".");
 
 const methods = {
   response: Symbol("response")
 };
 
-class Router extends Plugin {
+class Router {
   constructor(settings) {
-    super();
-    
+    this.plugins = new Plugins();
     this.routes = new Map(http.METHODS.map(m => [m, new Map()]));
-    this[Plugin.settings](settings);
+    this[Plugins.settings](settings);
   }
 
   pathToRegex(path) {
@@ -49,8 +48,10 @@ class Router extends Plugin {
   }
 
   action(request, action) {
-    if (typeof action === "string" && this.context)
-      return vm.runInContext(action, this.context)(request);
+    if (typeof action === "string") {
+      if (!this.context) this.context = vm.createContext({});
+      return vm.runInContext(action, this.context)(request)
+    }
 
     if (typeof action !== "function")
       throw new Error("Invalid action for endpoint");
@@ -58,14 +59,19 @@ class Router extends Plugin {
     return action(request);
   }
 
-  async [methods.response](request, output) {
-    if (await this[Plugin.middleware](methods.response, request, output)) return;
+  async response(request, output) {
+    let handled = await this.plugins.middleware(methods.response, request, output);
+    if (handled) return;
 
     let handler = typeof output === "string" ? "html" : "json";
     request[handler](output);
   }
 
-  [Plugin.settings]({environment, prefix, routes = []} = {}) {
+  [Plugins.load](plugins) {
+    this.plugins.load(plugins);
+  }
+
+  [Plugins.settings]({environment, prefix, routes = []} = {}) {
     this.prefix = prefix;
 
     if (environment) {
@@ -78,18 +84,18 @@ class Router extends Plugin {
       this.add(method, path, settings);
   }
  
-  async [Plugin.request](request, next) {
+  async [Plugins.request](request, next) {
     let match = this.match(request);
     if (!match) return next();
 
     request.router = match;
-    await this[Plugin.middleware](Plugin.request, request);
+    await this.plugins.middleware(Plugins.request, request);
     
     let {action} = (match.route || {}).settings || {};
     if (!action) return true;
 
     let output = await this.action(request, action);
-    if (output) this[methods.response](request, output);
+    if (output) this.response(request, output);
 
     return true;
   }

@@ -34,22 +34,21 @@ async function yaml(path) {
   try {
     let path = process.argv.slice(2).pop();
     let config = path.endsWith(".yaml") ? await yaml(path) : require(resolve(path));
-
-    app[Basejump.load](config.servers);
+    app.load(config.servers);
   }
   catch (err) {
     console.error(message(color.red, "Failed to load configuration:\n", err));
     process.exit();
   }
 
-  for (let plugin of app[Plugin.plugins].values()) {
-    plugin.on("failure", err =>
+  for (let [id, server] of app.servers) {
+    server.on("failure", err =>
       console.error(message(color.red, "ERROR:", err)));
     
-    plugin.on("listen", ({port}) =>
+    server.on("listen", ({port}) =>
       console.log(message(color.green, "Basejump listening on port", port)));
 
-    plugin.on("request", ({method, path, request}) => {
+    server.on("request", ({method, path, request}) => {
       let ip = request.headers["x-forwarded-for"] ||
               request.connection.remoteAddress;
       console.log(message(color.yellow, "REQUEST:", method, path, "from", ip));

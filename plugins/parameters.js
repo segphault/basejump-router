@@ -1,4 +1,4 @@
-const Plugin = require(".");
+const Plugins = require(".");
 
 class Params {
   convert(param, value) {
@@ -6,7 +6,7 @@ class Params {
            param.type === "boolean" ? value === "true" : value;
   }
 
-  [Plugin.request](request, next) {
+  [Plugins.request](request, next) {
     let {query, headers, router: {route, parameters: path = {}} = {}} = request;
     
     let {parameters} = route.settings || {};
