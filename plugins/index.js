@@ -11,6 +11,10 @@ class Plugins {
     this.plugins = new Map();
   }
 
+  get(id) {
+    return this.plugins.get(id);
+  } 
+
   middleware(feature, ...args) {
     let plugins = [...this.plugins.values()].filter(plugin => plugin[feature]);
     let run = n => plugins[n] && plugins[n][feature](...args, () => run(n + 1));

@@ -11,6 +11,9 @@ class Request {
     this.query = url.query;
     this.method = request.method;
     this.headers = request.headers;
+    
+    this.ip = request.headers["x-forwarded-for"] ||
+              request.connection.remoteAddress;
 
     this.closed = new Promise(resolve => request.on("close", resolve));
   }
